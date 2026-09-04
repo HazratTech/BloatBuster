@@ -84,10 +84,17 @@ async function initBilling() {
         const data = await res.json();
 
         if (data.confirmationUrl) {
-          // Open parent window directly to Shopify's native Subscription Approval Screen
-          if (window.top) {
-            window.top.location.href = data.confirmationUrl;
-          } else {
+          console.log('[BloatBuster] Navigating to confirmationUrl:', data.confirmationUrl);
+          
+          // Open parent window directly using standard App Bridge / top frame navigation
+          try {
+            if (window.shopify && typeof window.shopify.open === 'function') {
+              window.shopify.open(data.confirmationUrl, '_top');
+            } else {
+              window.open(data.confirmationUrl, '_top');
+            }
+          } catch (navErr) {
+            console.warn('Fallback navigation:', navErr);
             window.location.href = data.confirmationUrl;
           }
         } else if (data.error) {

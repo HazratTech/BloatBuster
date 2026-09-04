@@ -116,10 +116,11 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/auth') {
       const shop = url.searchParams.get('shop') || 'relayworks.myshopify.com';
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const state = url.searchParams.get('state') || '';
       const host = req.headers['x-forwarded-host'] || req.headers.host;
       const proto = req.headers['x-forwarded-proto'] || 'https';
       const redirectUri = encodeURIComponent(`${proto}://${host}/auth/callback`);
-      const authUrl = `https://${cleanShop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&redirect_uri=${redirectUri}`;
+      const authUrl = `https://${cleanShop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&redirect_uri=${redirectUri}&state=${state}`;
       
       res.writeHead(302, { 'Location': authUrl });
       return res.end();
@@ -128,6 +129,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/auth/callback') {
       const shop = url.searchParams.get('shop');
       const code = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
       if (!shop || !code) {
         res.writeHead(400, { 'Content-Type': 'text/plain' });
         return res.end('Missing shop or code parameter in OAuth callback.');
@@ -145,6 +147,7 @@ const server = http.createServer(async (req, res) => {
           })
         });
         const tokenData = await tokenRes.json();
+        const cleanShop = shop.replace('.myshopify.com', '');
         
         if (tokenData.access_token) {
           saveSession(shop, {
@@ -152,10 +155,58 @@ const server = http.createServer(async (req, res) => {
             scope: tokenData.scope
           });
           console.log(`[BloatBuster] Successfully saved access token for store: ${shop}`);
+
+          // If user came from the subscription flow, create the subscription charge immediately!
+          if (state === 'subscribe') {
+            const host = req.headers['x-forwarded-host'] || req.headers.host;
+            const proto = req.headers['x-forwarded-proto'] || 'https';
+            const returnUrl = `${proto}://${host}/api/billing/confirm?shop=${shop}`;
+
+            const gqlResponse = await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Shopify-Access-Token': tokenData.access_token
+              },
+              body: JSON.stringify({
+                query: `
+                  mutation AppSubscriptionCreate($name: String!, $returnUrl: URL!, $trialDays: Int, $test: Boolean, $lineItems: [AppSubscriptionLineItemInput!]!) {
+                    appSubscriptionCreate(name: $name, returnUrl: $returnUrl, trialDays: $trialDays, test: $test, lineItems: $lineItems) {
+                      userErrors { field message }
+                      confirmationUrl
+                      appSubscription { id status }
+                    }
+                  }
+                `,
+                variables: {
+                  name: "BloatBuster Pro: Automated Theme Cleaner",
+                  returnUrl,
+                  trialDays: 7,
+                  test: true,
+                  lineItems: [
+                    {
+                      plan: {
+                        appRecurringPricingDetails: {
+                          price: { amount: 19.00, currencyCode: "USD" },
+                          interval: "EVERY_30_DAYS"
+                        }
+                      }
+                    }
+                  ]
+                }
+              })
+            });
+
+            const gqlData = await gqlResponse.json();
+            const confirmationUrl = gqlData?.data?.appSubscriptionCreate?.confirmationUrl;
+            if (confirmationUrl) {
+              res.writeHead(302, { 'Location': confirmationUrl });
+              return res.end();
+            }
+          }
         }
 
-        // Redirect back into embedded admin app
-        const cleanShop = shop.replace('.myshopify.com', '');
+        // Default redirect back into embedded admin app
         res.writeHead(302, { 'Location': `https://admin.shopify.com/store/${cleanShop}/apps/${SHOPIFY_API_KEY}` });
         return res.end();
       } catch (err) {
@@ -175,14 +226,15 @@ const server = http.createServer(async (req, res) => {
       const proto = req.headers['x-forwarded-proto'] || 'https';
       const returnUrl = `${proto}://${host}/api/billing/confirm?shop=${cleanShop}`;
 
-      // If store hasn't completed OAuth yet, send auth redirect
+      // If store hasn't completed OAuth yet, send full authorize URL
       if (!session || !session.accessToken) {
-        console.log(`[BloatBuster Billing] No token found for ${cleanShop}. Directing to OAuth.`);
-        const authRedirect = `/auth?shop=${cleanShop}`;
+        console.log(`[BloatBuster Billing] No token found for ${cleanShop}. Generating full authorize URL.`);
+        const redirectUri = encodeURIComponent(`${proto}://${host}/auth/callback`);
+        const authUrl = `https://${cleanShop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&redirect_uri=${redirectUri}&state=subscribe`;
         return sendJson(res, 200, {
           success: true,
           needsAuth: true,
-          confirmationUrl: authRedirect
+          confirmationUrl: authUrl
         });
       }
 
@@ -209,7 +261,7 @@ const server = http.createServer(async (req, res) => {
           name: "BloatBuster Pro: Automated Theme Cleaner",
           returnUrl,
           trialDays: 7,
-          test: true, // test mode allows instant risk-free approvals on development stores
+          test: true,
           lineItems: [
             {
               plan: {
@@ -248,7 +300,6 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      // Fallback if test mode directly in dev
       return sendJson(res, 200, {
         success: true,
         confirmationUrl: `https://admin.shopify.com/store/${cleanShop.replace('.myshopify.com', '')}/charges/confirm`
