@@ -28,6 +28,8 @@ COPY data/ ./data/
 COPY public/ ./public/
 COPY shopify.app.toml ./
 
+RUN chown -R shopifyapp:nodejs /app/data
+
 USER shopifyapp
 
 EXPOSE 3000
