@@ -33,13 +33,12 @@ jobs:
         run: |
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/bloatbuster:latest
           
-          docker stop bloatbuster || true
-          docker rm bloatbuster || true
+          docker rm -f bloatbuster || true
           
           docker run -d \
             --name bloatbuster \
             --network custom_bridge \
-            --ip 172.25.0.16 \
+            --ip 172.25.0.50 \
             --env-file /home/envs/bloatbuster.env \
             -p 8084:3000 \
             --restart unless-stopped \
