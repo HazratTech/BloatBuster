@@ -91,7 +91,17 @@ async function initBilling() {
         if (data.confirmationUrl) {
           console.log('[BloatBuster] Navigating to confirmationUrl:', data.confirmationUrl);
           
-          // Open parent window directly using standard App Bridge / top frame navigation
+          if (data.needsAuth) {
+            // Shopify OAuth cannot be loaded inside an iframe due to X-Frame-Options: DENY.
+            // Open in top window or new tab to complete the 1-time app install.
+            window.open(data.confirmationUrl, '_blank');
+            startTrialBtn.disabled = false;
+            startTrialBtn.textContent = 'Approve App in Tab, Then Click Again';
+            alert('A new tab has opened to grant permissions for your new Partner App. Click "Install app" in that tab, then return here and click Start Trial!');
+            return;
+          }
+
+          // Open native Shopify Admin charge confirmation modal
           try {
             if (window.shopify && typeof window.shopify.open === 'function') {
               window.shopify.open(data.confirmationUrl, '_top');
