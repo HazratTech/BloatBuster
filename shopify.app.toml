@@ -2,7 +2,7 @@
 
 client_id = "468869026551455874d932a9608b7494"
 name = "BloatBuster: Clean Theme Code"
-application_url = "https://example.com"
+application_url = "https://bloatbuster.relayworks.dev"
 embedded = true
 handle = "bloatbuster-clean-theme-code"
 
@@ -19,7 +19,7 @@ optional_scopes = [ ]
 use_legacy_install_flow = false
 
 [auth]
-redirect_urls = [ ]
+redirect_urls = [ "https://bloatbuster.relayworks.dev/auth/callback" ]
 
 [pos]
 embedded = false
