@@ -421,14 +421,20 @@ const server = http.createServer(async (req, res) => {
         '.ico': 'image/x-icon'
       };
       const contentType = mimeTypes[ext] || 'application/octet-stream';
-      res.writeHead(200, { 'Content-Type': contentType });
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Cache-Control': 'no-cache, must-revalidate'
+      });
       return fs.createReadStream(filePath).pipe(res);
     }
 
     // Default fallback to index.html
     const fallbackPath = path.join(PUBLIC_DIR, 'index.html');
     if (fs.existsSync(fallbackPath)) {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, must-revalidate'
+      });
       return fs.createReadStream(fallbackPath).pipe(res);
     }
 
