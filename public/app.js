@@ -35,6 +35,11 @@ async function initBilling() {
   const startTrialBtn = document.getElementById('btnStartTrial');
   const cleanShop = getCurrentShop();
 
+  const billingError = params.get('billing_error');
+  if (billingError) {
+    alert(`Shopify Billing Notice:\n\n${billingError}\n\nNote: If this mentions "owned by a Shop", go to your Shopify Partner Dashboard -> Apps -> BloatBuster -> Distribution -> select "Public distribution".`);
+  }
+
   if (isSubscribedFromUrl && banner) {
     banner.style.display = 'flex';
     if (openProBtn) {
