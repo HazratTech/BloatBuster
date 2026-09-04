@@ -315,7 +315,8 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, {
           success: true,
           needsAuth: true,
-          confirmationUrl: authUrl
+          confirmationUrl: authUrl,
+          debugError: gqlData?.errors || `HTTP status ${gqlResponse.status}`
         });
       }
 
