@@ -35,11 +35,14 @@ jobs:
           
           docker rm -f bloatbuster || true
           
+          mkdir -p /home/bloatbuster_data || true
+
           docker run -d \
             --name bloatbuster \
             --network custom_bridge \
             --ip 172.25.0.50 \
             --env-file /home/envs/bloatbuster.env \
+            -v /home/bloatbuster_data:/app/data \
             -p 8084:3000 \
             --restart unless-stopped \
             ${{ secrets.DOCKERHUB_USERNAME }}/bloatbuster:latest
