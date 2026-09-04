@@ -1,0 +1,15 @@
+services:
+  bloatbuster:
+    build: .
+    container_name: bloatbuster-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SHOPIFY_API_KEY=468869026551455874d932a9608b7494
+      - SHOPIFY_API_SECRET=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
+      - SCOPES=read_themes,write_themes
+      # Set your production URL below once your subdomain DNS is pointed
+      - HOST=https://bloatbuster.relayworks.com
