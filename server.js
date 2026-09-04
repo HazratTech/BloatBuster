@@ -34,8 +34,8 @@ if (fs.existsSync(envPath)) {
   });
 }
 
-const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY || '468869026551455874d932a9608b7494';
-const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET || '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';
+const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY || 'f3c6dde5474766c85897a2bd2567ea50';
+const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET || '';
 const SCOPES = process.env.SCOPES || 'read_themes,write_themes';
 
 // Helper to parse JSON body

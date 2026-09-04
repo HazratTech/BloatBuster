@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "468869026551455874d932a9608b7494"
+client_id = "f3c6dde5474766c85897a2bd2567ea50"
 name = "BloatBuster: Clean Theme Code"
 application_url = "https://bloatbuster.relayworks.dev"
 embedded = true
