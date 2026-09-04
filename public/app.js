@@ -9,12 +9,100 @@ let activeAppOverrides = new Set();
 document.addEventListener('DOMContentLoaded', () => {
   initShopContext();
   initTabs();
+  initBilling();
   loadSignatures();
   setupScanForm();
   setupDemoPills();
   setupLiquidInspector();
   setupModals();
 });
+
+// Helper to get current clean shop domain
+function getCurrentShop() {
+  const params = new URLSearchParams(window.location.search);
+  const shopFromUrl = params.get('shop');
+  const storeInput = document.getElementById('storeUrlInput');
+  const raw = shopFromUrl || storeInput?.value || 'relayworks.myshopify.com';
+  return raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
+
+// Check and Initialize Billing Status
+async function initBilling() {
+  const params = new URLSearchParams(window.location.search);
+  const isSubscribedFromUrl = params.get('plan') === 'pro' || params.get('subscribed') === 'true';
+  const banner = document.getElementById('proActiveBanner');
+  const openProBtn = document.getElementById('openProModal');
+  const startTrialBtn = document.getElementById('btnStartTrial');
+  const cleanShop = getCurrentShop();
+
+  if (isSubscribedFromUrl && banner) {
+    banner.style.display = 'flex';
+    if (openProBtn) {
+      openProBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="#008060">
+          <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+        </svg>
+        Pro Plan Active
+      `;
+    }
+  }
+
+  // Check live billing status from backend
+  try {
+    const res = await fetch(`/api/billing/status?shop=${cleanShop}`);
+    const data = await res.json();
+    if (data.isPro) {
+      if (banner) banner.style.display = 'flex';
+      if (openProBtn) {
+        openProBtn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="#008060">
+            <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+          </svg>
+          Pro Plan Active
+        `;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not verify billing status:', err);
+  }
+
+  // Handle Trial / Subscription Click
+  if (startTrialBtn) {
+    startTrialBtn.addEventListener('click', async () => {
+      startTrialBtn.disabled = true;
+      startTrialBtn.innerHTML = `
+        <span class="polaris-spinner" style="width: 16px; height: 16px; margin: 0 8px 0 0; display: inline-block; vertical-align: middle;"></span>
+        Connecting to Shopify Billing...
+      `;
+
+      try {
+        const res = await fetch('/api/billing/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shop: cleanShop })
+        });
+        const data = await res.json();
+
+        if (data.confirmationUrl) {
+          // Open parent window directly to Shopify's native Subscription Approval Screen
+          if (window.top) {
+            window.top.location.href = data.confirmationUrl;
+          } else {
+            window.location.href = data.confirmationUrl;
+          }
+        } else if (data.error) {
+          alert(`Shopify Billing Notice: ${data.error}`);
+          startTrialBtn.disabled = false;
+          startTrialBtn.textContent = 'Start 7-Day Free Trial';
+        }
+      } catch (err) {
+        alert(`Failed to start subscription: ${err.message}`);
+        startTrialBtn.disabled = false;
+        startTrialBtn.textContent = 'Start 7-Day Free Trial';
+      }
+    });
+  }
+}
 
 // 1. Detect Shop Context from Shopify Admin iframe query params
 function initShopContext() {
