@@ -304,11 +304,27 @@ const server = http.createServer(async (req, res) => {
       });
 
       const gqlData = await gqlResponse.json();
+      console.log(`[BloatBuster Billing API] Response: status=${gqlResponse.status}`, JSON.stringify(gqlData));
+
+      // If token is invalid or expired, reset session and redirect to OAuth
+      if (gqlResponse.status === 401 || (gqlData.errors && !gqlData.data)) {
+        console.warn(`[BloatBuster Billing] Invalid access token for ${cleanShop}. Clearing session and triggering fresh OAuth.`);
+        saveSession(cleanShop, { accessToken: null });
+        const redirectUri = encodeURIComponent(`${proto}://${host}/auth/callback`);
+        const authUrl = `https://${cleanShop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&redirect_uri=${redirectUri}&state=subscribe`;
+        return sendJson(res, 200, {
+          success: true,
+          needsAuth: true,
+          confirmationUrl: authUrl
+        });
+      }
+
       const subscriptionResult = gqlData?.data?.appSubscriptionCreate;
 
       if (subscriptionResult?.userErrors?.length > 0) {
-        console.error('Billing user errors:', subscriptionResult.userErrors);
-        return sendJson(res, 400, { error: subscriptionResult.userErrors[0].message });
+        const userErr = subscriptionResult.userErrors[0].message;
+        console.error('Billing user error:', userErr);
+        return sendJson(res, 400, { error: userErr });
       }
 
       if (subscriptionResult?.confirmationUrl) {
@@ -319,10 +335,9 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      return sendJson(res, 200, {
-        success: true,
-        confirmationUrl: `https://admin.shopify.com/store/${cleanShop.replace('.myshopify.com', '')}/charges/confirm`
-      });
+      const fallbackErr = gqlData?.errors?.[0]?.message || 'Shopify did not return a subscription confirmation URL.';
+      console.error('[BloatBuster Billing Error]:', fallbackErr);
+      return sendJson(res, 400, { error: fallbackErr });
     }
 
     // 3. Billing Callback / Confirmation
