@@ -1,37 +1,51 @@
 /**
- * BloatBuster - Frontend Application Logic
+ * BloatBuster - Shopify Polaris Native Frontend Logic
  */
 
 let allSignatures = [];
 let currentScanData = null;
-let activeAppOverrides = new Set(); // tracks which apps user marked as active
+let activeAppOverrides = new Set();
 
 document.addEventListener('DOMContentLoaded', () => {
+  initShopContext();
   initTabs();
   loadSignatures();
   setupScanForm();
-  setupDemoChips();
+  setupDemoPills();
   setupLiquidInspector();
   setupModals();
 });
 
-// 1. Navigation Tabs
+// 1. Detect Shop Context from Shopify Admin iframe query params
+function initShopContext() {
+  const params = new URLSearchParams(window.location.search);
+  const shop = params.get('shop');
+  const storeInput = document.getElementById('storeUrlInput');
+  const domainHeader = document.getElementById('storeDomainHeader');
+
+  if (shop) {
+    if (storeInput) storeInput.value = shop;
+    if (domainHeader) domainHeader.textContent = shop;
+  }
+}
+
+// 2. Navigation Tabs
 function initTabs() {
-  const tabs = document.querySelectorAll('.tab-btn');
+  const tabs = document.querySelectorAll('.tab-link');
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
 
       const targetTab = tab.dataset.tab;
-      document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+      document.querySelectorAll('.tab-pane').forEach(c => c.style.display = 'none');
       const activeContent = document.getElementById(`tab-${targetTab}`);
       if (activeContent) activeContent.style.display = 'block';
     });
   });
 }
 
-// 2. Load App Signatures
+// 3. Load App Signatures
 async function loadSignatures() {
   try {
     const res = await fetch('/api/signatures');
@@ -61,43 +75,52 @@ function renderSignatures(apps) {
   if (!container) return;
 
   if (apps.length === 0) {
-    container.innerHTML = `<div style="color: var(--text-dim); grid-column: 1/-1;">No matching apps found.</div>`;
+    container.innerHTML = `<div style="color: var(--p-color-text-secondary); grid-column: 1/-1;">No matching apps found.</div>`;
     return;
   }
 
   container.innerHTML = apps.map(app => `
-    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 6px;">
-        <div style="font-weight: 700; font-size: 14px;">${escapeHtml(app.name)}</div>
-        <span class="tag-severity severity-${app.speedPenalty.toLowerCase()}">${app.speedPenalty}</span>
+    <div style="background: var(--p-color-bg-surface); border: 1px solid var(--p-color-border); border-radius: var(--p-radius-sm); padding: 14px; box-shadow: var(--p-shadow-card);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+        <div style="font-weight: 600; font-size: 13.5px; color: var(--p-color-text);">${escapeHtml(app.name)}</div>
+        <span class="badge badge-${app.speedPenalty === 'High' ? 'critical' : app.speedPenalty === 'Medium' ? 'warning' : 'info'}">${app.speedPenalty}</span>
       </div>
-      <div style="font-size: 11px; color: var(--shopify-green); margin-bottom: 8px;">${escapeHtml(app.category)}</div>
-      <div style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">${escapeHtml(app.description)}</div>
-      <div style="font-size: 11px; color: var(--text-dim); font-family: monospace;">
-        Avg. Size: ~${app.avgSizeKB}KB | Delay: +${app.avgDelayMs}ms
+      <div style="font-size: 11px; color: var(--p-color-text-secondary); margin-bottom: 8px;">${escapeHtml(app.category)}</div>
+      <div style="font-size: 12px; color: var(--p-color-text-secondary); line-height: 1.4; margin-bottom: 10px;">${escapeHtml(app.description)}</div>
+      <div style="font-size: 11px; font-family: var(--p-font-mono); color: var(--p-color-text-subdued);">
+        Avg. Transfer: ~${app.avgSizeKB}KB &bull; Delay: +${app.avgDelayMs}ms
       </div>
     </div>
   `).join('');
 }
 
-// 3. Setup Scan Form
+// 4. Setup Scan Form
 function setupScanForm() {
   const form = document.getElementById('scanForm');
   const input = document.getElementById('storeUrlInput');
+  const btnTop = document.getElementById('btnRunAuditTop');
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const url = input.value.trim();
-    if (!url) return;
-    executeScan(url);
-  });
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = input.value.trim();
+      if (url) executeScan(url);
+    });
+  }
+
+  if (btnTop) {
+    btnTop.addEventListener('click', () => {
+      const url = input.value.trim() || 'relayworks.myshopify.com';
+      executeScan(url);
+    });
+  }
 }
 
-function setupDemoChips() {
-  const chips = document.querySelectorAll('.chip');
-  chips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      const url = chip.dataset.url;
+function setupDemoPills() {
+  const pills = document.querySelectorAll('.pill-btn[data-url]');
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const url = pill.dataset.url;
       const input = document.getElementById('storeUrlInput');
       input.value = url;
       executeScan(url);
@@ -105,7 +128,7 @@ function setupDemoChips() {
   });
 }
 
-// 4. Execute Storefront Scan
+// 5. Execute Storefront Scan
 async function executeScan(storeUrl) {
   const scanningState = document.getElementById('scanningState');
   const reportView = document.getElementById('reportView');
@@ -115,20 +138,16 @@ async function executeScan(storeUrl) {
   reportView.style.display = 'none';
   scanningState.style.display = 'block';
   submitBtn.disabled = true;
-  submitBtn.style.opacity = '0.6';
 
-  statusMsg.textContent = `Connecting to ${storeUrl}...`;
-
-  // Simulated step messages for high user feedback
-  setTimeout(() => { statusMsg.textContent = 'Fetching storefront HTML & scripts...'; }, 600);
-  setTimeout(() => { statusMsg.textContent = 'Scanning for 52 known app signatures...'; }, 1200);
+  statusMsg.textContent = `Establishing connection to ${storeUrl}...`;
+  setTimeout(() => { statusMsg.textContent = 'Extracting storefront scripts & preconnect tags...'; }, 500);
+  setTimeout(() => { statusMsg.textContent = 'Comparing DOM against 52 verified app signatures...'; }, 1100);
 
   try {
-    // Handle mock demo store locally if requested
     let result;
     if (storeUrl === 'demo-bloated-store') {
       result = getMockDemoScanResult();
-      await new Promise(r => setTimeout(r, 1400));
+      await new Promise(r => setTimeout(r, 1200));
     } else {
       const res = await fetch('/api/scan', {
         method: 'POST',
@@ -137,7 +156,7 @@ async function executeScan(storeUrl) {
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Failed with status ${res.status}`);
+        throw new Error(errData.error || `Scan error HTTP ${res.status}`);
       }
       result = await res.json();
     }
@@ -146,73 +165,69 @@ async function executeScan(storeUrl) {
     activeAppOverrides.clear();
     renderReport(result);
   } catch (err) {
-    alert(`Scan error: ${err.message}`);
+    alert(`Storefront Scan Error: ${err.message}`);
   } finally {
     scanningState.style.display = 'none';
     submitBtn.disabled = false;
-    submitBtn.style.opacity = '1';
   }
 }
 
-// 5. Render Scan Report
+// 6. Render Report with Polaris Elements
 function renderReport(data) {
   const reportView = document.getElementById('reportView');
   reportView.style.display = 'block';
 
-  // Recalculate metrics based on current active/orphan overrides
   const suspectedOrphans = data.detectedApps.filter(app => !activeAppOverrides.has(app.appId));
   const activeApps = data.detectedApps.filter(app => activeAppOverrides.has(app.appId));
 
-  // Dynamic KPI updates
   const totalWastedKB = suspectedOrphans.reduce((sum, a) => sum + (a.avgSizeKB || 140), 0);
   const totalDelaySeconds = (suspectedOrphans.reduce((sum, a) => sum + (a.avgDelayMs || 250), 0) / 1000).toFixed(2);
   
-  // Calculate dynamic score
   let score = 100 - (suspectedOrphans.length * 12);
-  score = Math.max(20, Math.min(100, score));
+  score = Math.max(15, Math.min(100, score));
 
-  // Update gauge
-  const gaugeCircle = document.getElementById('gaugeCircle');
+  // Circular Dial Animation
+  const dialCircle = document.getElementById('dialCircleValue');
   const scoreNum = document.getElementById('scoreNum');
   const scoreGrade = document.getElementById('scoreGrade');
   const headlineText = document.getElementById('headlineText');
-  const storeDomainDisplay = document.getElementById('storeDomainDisplay');
 
   scoreNum.textContent = score;
-  storeDomainDisplay.textContent = data.storeUrl;
+
+  // Circle circumference for r=40 is ~251.2
+  const circumference = 251.2;
+  const offset = circumference - (score / 100) * circumference;
+  dialCircle.style.strokeDashoffset = offset;
 
   if (score < 60) {
-    scoreGrade.textContent = 'Grade F';
-    gaugeCircle.style.borderColor = 'var(--alert-red)';
-    gaugeCircle.style.boxShadow = '0 0 24px var(--alert-red-dim)';
-    headlineText.textContent = 'Critical Theme Bloat';
-    headlineText.style.color = 'var(--alert-red)';
+    dialCircle.style.stroke = 'var(--p-color-critical)';
+    scoreGrade.textContent = 'Grade F • High Risk';
+    scoreGrade.style.color = 'var(--p-color-critical)';
+    headlineText.textContent = 'Critical Theme Debt';
   } else if (score < 80) {
-    scoreGrade.textContent = 'Grade C';
-    gaugeCircle.style.borderColor = 'var(--warning-amber)';
-    gaugeCircle.style.boxShadow = '0 0 24px var(--warning-amber-dim)';
+    dialCircle.style.stroke = 'var(--p-color-warning)';
+    scoreGrade.textContent = 'Grade C • Action Advised';
+    scoreGrade.style.color = 'var(--p-color-warning)';
     headlineText.textContent = 'Moderate Theme Debt';
-    headlineText.style.color = 'var(--warning-amber)';
   } else {
-    scoreGrade.textContent = 'Grade A';
-    gaugeCircle.style.borderColor = 'var(--shopify-green)';
-    gaugeCircle.style.boxShadow = '0 0 24px var(--shopify-green-dim)';
-    headlineText.textContent = 'Theme is Lean';
-    headlineText.style.color = 'var(--shopify-green)';
+    dialCircle.style.stroke = 'var(--p-color-primary)';
+    scoreGrade.textContent = 'Grade A • Optimized';
+    scoreGrade.style.color = 'var(--p-color-primary)';
+    headlineText.textContent = 'Clean Theme Health';
   }
 
-  // Update KPI cards
-  document.getElementById('kpiOrphans').textContent = `${suspectedOrphans.length} Apps`;
+  // Update Metric KPIs
+  document.getElementById('kpiOrphans').textContent = `${suspectedOrphans.length} Scripts`;
   document.getElementById('kpiWastedKB').textContent = `${totalWastedKB} KB`;
   document.getElementById('kpiDelay').textContent = `+${totalDelaySeconds}s`;
-  document.getElementById('findingsBadge').textContent = `${suspectedOrphans.length} Uninstalled Scripts`;
+  document.getElementById('findingsBadge').textContent = `${suspectedOrphans.length} Action Items`;
 
-  // Render Findings List
+  // Render Table Rows
   const container = document.getElementById('findingsContainer');
   if (!data.detectedApps || data.detectedApps.length === 0) {
     container.innerHTML = `
-      <div style="padding: 32px; text-align: center; color: var(--shopify-green);">
-        🎉 <strong>No third-party app scripts detected!</strong> Your storefront code is exceptionally clean.
+      <div style="padding: 28px; text-align: center; color: var(--p-color-primary); font-weight: 500;">
+        Zero third-party orphan scripts detected on ${escapeHtml(data.storeUrl)}. Your storefront is exceptionally clean.
       </div>
     `;
     return;
@@ -220,39 +235,41 @@ function renderReport(data) {
 
   container.innerHTML = data.detectedApps.map(app => {
     const isOrphan = !activeAppOverrides.has(app.appId);
-    const evidence = app.matchReasons?.[0]?.evidence || 'External script call found in page DOM';
+    const evidence = app.matchReasons?.[0]?.evidence || 'External script tag found in HTML DOM';
 
     return `
-      <div class="finding-item" id="finding-${app.appId}">
-        <div class="finding-left">
-          <div class="finding-icon">${getCategoryIcon(app.category)}</div>
-          <div class="finding-info">
-            <div class="finding-name">
-              ${escapeHtml(app.name)}
-              <span class="tag-severity severity-${app.speedPenalty.toLowerCase()}">${app.speedPenalty} Impact</span>
-              <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; ${isOrphan ? 'background: var(--alert-red-dim); color: var(--alert-red);' : 'background: var(--shopify-green-dim); color: var(--shopify-green);'}">
+      <div class="table-row">
+        <div class="row-primary">
+          <div class="app-avatar">
+            ${getCategorySvg(app.category)}
+          </div>
+          <div class="app-details">
+            <div class="app-title-bar">
+              <span class="app-name">${escapeHtml(app.name)}</span>
+              <span class="badge badge-${app.speedPenalty === 'High' ? 'critical' : 'warning'}">${app.speedPenalty} Impact</span>
+              <span class="badge ${isOrphan ? 'badge-critical' : 'badge-success'}">
                 ${isOrphan ? 'Leftover Orphan' : 'Active App'}
               </span>
             </div>
-            <div class="finding-evidence" title="${escapeHtml(evidence)}">
-              Detected: ${escapeHtml(evidence)}
+            <div class="code-evidence" title="${escapeHtml(evidence)}">
+              ${escapeHtml(evidence)}
             </div>
           </div>
         </div>
 
-        <div class="finding-actions">
-          <button class="btn-toggle ${!isOrphan ? 'active' : ''}" onclick="toggleAppStatus('${app.appId}')">
-            ${!isOrphan ? '✓ Still In Use' : 'Mark as Active'}
+        <div class="row-actions">
+          <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="toggleAppStatus('${app.appId}')">
+            ${!isOrphan ? 'Mark as Inactive' : 'Still In Use'}
           </button>
-          <button class="btn-clean-guide" onclick="showExcisionModal('${app.appId}')">
-            Clean Guide
+          <button class="btn-primary" style="font-size: 12px; padding: 6px 12px;" onclick="showExcisionModal('${app.appId}')">
+            Excision Guide
           </button>
         </div>
       </div>
     `;
   }).join('');
 
-  // Render Unknown Scripts if any
+  // Unknown External Scripts
   const unknownSection = document.getElementById('unknownSection');
   const unknownContainer = document.getElementById('unknownContainer');
   const unknownCountBadge = document.getElementById('unknownCountBadge');
@@ -261,7 +278,7 @@ function renderReport(data) {
     unknownSection.style.display = 'block';
     unknownCountBadge.textContent = `${data.unknownExternalScripts.length} Scripts`;
     unknownContainer.innerHTML = data.unknownExternalScripts.map(s => `
-      <div style="font-family: monospace; font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 4px; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+      <div style="font-family: var(--p-font-mono); font-size: 11.5px; color: var(--p-color-text-secondary); background: var(--p-color-bg-surface-secondary); border: 1px solid var(--p-color-border-subdued); padding: 8px 12px; border-radius: 4px; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
         ${escapeHtml(s.url)}
       </div>
     `).join('');
@@ -269,11 +286,10 @@ function renderReport(data) {
     unknownSection.style.display = 'none';
   }
 
-  // Smooth scroll to results
   reportView.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// 6. Interactive App Status Toggle
+// 7. Interactive Toggle
 window.toggleAppStatus = function(appId) {
   if (activeAppOverrides.has(appId)) {
     activeAppOverrides.delete(appId);
@@ -285,26 +301,26 @@ window.toggleAppStatus = function(appId) {
   }
 };
 
-// 7. Show Safe Excision Modal
+// 8. Safe Excision Modal
 window.showExcisionModal = function(appId) {
   const app = currentScanData?.detectedApps?.find(a => a.appId === appId);
   if (!app) return;
 
   const modal = document.getElementById('excisionModal');
-  document.getElementById('modalAppTitle').textContent = `Safe Removal Guide: ${app.name}`;
-  
+  document.getElementById('modalAppTitle').textContent = `Removal Protocol &bull; ${app.name}`;
+
   const evidence = app.matchReasons?.[0]?.evidence || `<script src="...${appId}..."></script>`;
   document.getElementById('modalOriginalCode').textContent = evidence;
   document.getElementById('modalReplacementCode').textContent = 
-    `{%- comment -%} [BloatBuster Safe Clean] Removed ${app.name}: ${evidence} {%- endcomment -%}`;
+    `{%- comment -%} [BloatBuster Safe Excision] Removed ${app.name}: ${evidence} {%- endcomment -%}`;
 
   const stepsList = document.getElementById('modalStepsList');
   stepsList.innerHTML = `
     <li>Open your Shopify Admin &rarr; <strong>Online Store</strong> &rarr; <strong>Themes</strong>.</li>
-    <li>Click the <strong>&hellip; (Three Dots)</strong> menu next to your active theme &rarr; <strong>Edit Code</strong>.</li>
-    <li>Search for <code>layout/theme.liquid</code> or snippets matching <code>${app.snippetPatterns?.[0] || appId}</code>.</li>
+    <li>Click <strong>&hellip; (Actions)</strong> next to your active theme &rarr; <strong>Edit Code</strong>.</li>
+    <li>Locate <code>layout/theme.liquid</code> or snippets matching <code>${app.snippetPatterns?.[0] || appId}</code>.</li>
     <li>Delete the script tag or replace with the safe comment above.</li>
-    <li>Click <strong>Save</strong>.</li>
+    <li>Click <strong>Save</strong> in the upper-right corner.</li>
   `;
 
   const cleanShop = (currentScanData?.storeUrl || 'store.myshopify.com').replace('.myshopify.com', '').replace(/^https?:\/\//, '');
@@ -314,7 +330,7 @@ window.showExcisionModal = function(appId) {
   modal.style.display = 'flex';
 };
 
-// 8. Liquid Code Inspector
+// 9. Theme.liquid Code Inspector
 function setupLiquidInspector() {
   const scanBtn = document.getElementById('scanLiquidBtn');
   const input = document.getElementById('liquidCodeInput');
@@ -322,15 +338,17 @@ function setupLiquidInspector() {
   const badge = document.getElementById('liquidFindingsBadge');
   const container = document.getElementById('liquidFindingsContainer');
 
+  if (!scanBtn) return;
+
   scanBtn.addEventListener('click', async () => {
     const liquidCode = input.value.trim();
     if (!liquidCode) {
-      alert('Please paste liquid code first.');
+      alert('Please paste liquid code from your theme file.');
       return;
     }
 
     scanBtn.disabled = true;
-    scanBtn.textContent = 'Scanning...';
+    scanBtn.textContent = 'Analyzing...';
 
     try {
       const res = await fetch('/api/scan-code', {
@@ -341,54 +359,64 @@ function setupLiquidInspector() {
       const data = await res.json();
 
       resultsCard.style.display = 'block';
-      badge.textContent = `${data.findingsCount} Findings`;
+      badge.textContent = `${data.findingsCount} References`;
 
       if (data.findingsCount === 0) {
-        container.innerHTML = `<div style="padding: 24px; color: var(--shopify-green); text-align: center;">✓ No dead app tags found in this code snippet!</div>`;
+        container.innerHTML = `<div style="padding: 20px; color: var(--p-color-primary); font-weight: 500; text-align: center;">No third-party app tags detected in this code block.</div>`;
       } else {
         container.innerHTML = data.findings.map(f => `
-          <div class="finding-item">
-            <div class="finding-left">
-              <div class="finding-icon">📄</div>
-              <div class="finding-info">
-                <div class="finding-name">
-                  Line ${f.line}: ${escapeHtml(f.appName)}
-                  <span class="tag-severity severity-${f.speedPenalty.toLowerCase()}">${f.speedPenalty}</span>
+          <div class="table-row">
+            <div class="row-primary">
+              <div class="app-avatar">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4Zm1.5 4a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 5.5 6Zm0 3.5a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1-.75-.75Zm0 3.5a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+              <div class="app-details">
+                <div class="app-title-bar">
+                  <span class="app-name">Line ${f.line}: ${escapeHtml(f.appName)}</span>
+                  <span class="badge badge-${f.speedPenalty === 'High' ? 'critical' : 'warning'}">${f.speedPenalty}</span>
                 </div>
-                <div class="finding-evidence">
-                  Code: <code>${escapeHtml(f.codeSnippet)}</code>
+                <div class="code-evidence">
+                  <code>${escapeHtml(f.codeSnippet)}</code>
                 </div>
               </div>
             </div>
-            <div class="finding-actions">
-              <button class="btn-clean-guide" onclick="alert('Delete or comment out Line ${f.line}: ${escapeHtml(f.codeSnippet)}')">
-                View Excision
+            <div class="row-actions">
+              <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="alert('Line ${f.line}: ${escapeHtml(f.cleanupAdvice)}')">
+                Advice
               </button>
             </div>
           </div>
         `).join('');
       }
     } catch (err) {
-      alert(`Error scanning code: ${err.message}`);
+      alert(`Liquid Inspector Error: ${err.message}`);
     } finally {
       scanBtn.disabled = false;
-      scanBtn.innerHTML = '<span>🔍</span><span>Analyze Liquid Code</span>';
+      scanBtn.textContent = 'Analyze Liquid AST';
     }
   });
 }
 
-// 9. Modals Setup
+// 10. Modals
 function setupModals() {
   const excisionModal = document.getElementById('excisionModal');
   const closeExcisionModal = document.getElementById('closeExcisionModal');
-  closeExcisionModal.addEventListener('click', () => excisionModal.style.display = 'none');
+  if (closeExcisionModal) {
+    closeExcisionModal.addEventListener('click', () => excisionModal.style.display = 'none');
+  }
 
   const proModal = document.getElementById('proModal');
   const openProModal = document.getElementById('openProModal');
   const closeProModal = document.getElementById('closeProModal');
 
-  openProModal.addEventListener('click', () => proModal.style.display = 'flex');
-  closeProModal.addEventListener('click', () => proModal.style.display = 'none');
+  if (openProModal) {
+    openProModal.addEventListener('click', () => proModal.style.display = 'flex');
+  }
+  if (closeProModal) {
+    closeProModal.addEventListener('click', () => proModal.style.display = 'none');
+  }
 
   window.addEventListener('click', (e) => {
     if (e.target === excisionModal) excisionModal.style.display = 'none';
@@ -396,14 +424,24 @@ function setupModals() {
   });
 }
 
-function getCategoryIcon(cat) {
-  if (cat.includes('Reviews')) return '⭐';
-  if (cat.includes('Email') || cat.includes('SMS')) return '✉️';
-  if (cat.includes('Analytics') || cat.includes('Heatmaps')) return '📊';
-  if (cat.includes('Support') || cat.includes('Chat')) return '💬';
-  if (cat.includes('Upsells') || cat.includes('Bundles')) return '🛍️';
-  if (cat.includes('Subscription')) return '🔄';
-  return '📦';
+// Crisp Vector SVGs for App Categories (No Emojis)
+function getCategorySvg(category) {
+  if (category.includes('Reviews')) {
+    return `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z"/></svg>`;
+  }
+  if (category.includes('Email') || category.includes('SMS')) {
+    return `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 0 0-2 2v1.161l8.441 4.221a1.25 1.25 0 0 0 1.118 0L19 7.162V6a2 2 0 0 0-2-2H3Z"/><path d="m19 8.839-7.77 3.885a2.75 2.75 0 0 1-2.46 0L1 8.839V14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.839Z"/></svg>`;
+  }
+  if (category.includes('Analytics') || category.includes('Heatmap')) {
+    return `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3Zm4 11a1 1 0 0 0 2 0v-4a1 1 0 0 0-2 0v4Zm4 0a1 1 0 0 0 2 0V7a1 1 0 0 0-2 0v7Zm4 0a1 1 0 0 0 2 0v-2a1 1 0 0 0-2 0v2Z"/></svg>`;
+  }
+  if (category.includes('Support') || category.includes('Chat')) {
+    return `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2c-4.418 0-8 3.134-8 7 0 1.766.756 3.39 2.029 4.633a.75.75 0 0 1 .218.497l-.234 2.112a.75.75 0 0 0 .964.792l2.39-.797a.75.75 0 0 1 .459.027A8.47 8.47 0 0 0 10 16c4.418 0 8-3.134 8-7s-3.582-7-8-7Z" clip-rule="evenodd"/></svg>`;
+  }
+  if (category.includes('Subscription')) {
+    return `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.451a.75.75 0 0 0 0-1.5H4.5a.75.75 0 0 0-.75.75v3.75a.75.75 0 0 0 1.5 0v-2.034l.432.432a7 7 0 0 0 11.666-3.138.75.75 0 1 0-1.458-.415ZM4.688 8.576a5.5 5.5 0 0 1 9.201-2.466l.312.311h-2.451a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 .75-.75V3.421a.75.75 0 0 0-1.5 0v2.034l-.432-.432a7 7 0 0 0-11.666 3.138.75.75 0 0 0 1.458.415Z" clip-rule="evenodd"/></svg>`;
+  }
+  return `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.5 2A2.5 2.5 0 0 0 2 4.5v11A2.5 2.5 0 0 0 4.5 18h11a2.5 2.5 0 0 0 2.5-2.5v-11A2.5 2.5 0 0 0 15.5 2h-11ZM6.75 6.25a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3.5a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clip-rule="evenodd"/></svg>`;
 }
 
 function escapeHtml(str) {
@@ -413,17 +451,16 @@ function escapeHtml(str) {
   }[m]));
 }
 
-// Sample Mock Bloated Store Data for Instant Testing
 function getMockDemoScanResult() {
   return {
-    storeUrl: 'sample-bloated-store.myshopify.com',
-    finalUrl: 'https://sample-bloated-store.myshopify.com',
-    scanDurationMs: 840,
+    storeUrl: 'relayworks-sample.myshopify.com',
+    finalUrl: 'https://relayworks.myshopify.com',
+    scanDurationMs: 680,
     score: 52,
     grade: 'F',
-    badgeColor: '#DE3618',
-    headline: 'Critical Theme Bloat Detected',
-    recommendation: 'You have 4 dead scripts dragging down your mobile speed score.',
+    badgeColor: '#D72C0D',
+    headline: 'Critical Theme Debt Detected',
+    recommendation: '4 dead third-party scripts were found executing on your storefront.',
     metrics: {
       totalOrphans: 4,
       highSeverityCount: 3,
@@ -434,9 +471,9 @@ function getMockDemoScanResult() {
       unknownScriptsCount: 1
     },
     summary: {
-      totalScriptsFound: 18,
-      externalScriptsCount: 11,
-      inlineScriptsCount: 7,
+      totalScriptsFound: 16,
+      externalScriptsCount: 10,
+      inlineScriptsCount: 6,
       stylesheetsCount: 4,
       suspectedOrphansCount: 4,
       activeAppsCount: 0,
@@ -450,7 +487,7 @@ function getMockDemoScanResult() {
         speedPenalty: 'High',
         avgSizeKB: 185,
         avgDelayMs: 320,
-        description: 'Klaviyo loads heavy customer identity trackers and popups.',
+        description: 'Identity tracking, signup popups, and event listeners.',
         snippetPatterns: ['klaviyo.liquid'],
         status: 'suspected_orphan',
         matchReasons: [{ type: 'external_script', evidence: 'https://static.klaviyo.com/onsite/js/klaviyo.js?company_id=XYZ123' }]
@@ -462,19 +499,19 @@ function getMockDemoScanResult() {
         speedPenalty: 'High',
         avgSizeKB: 210,
         avgDelayMs: 380,
-        description: 'Loox review widgets inject heavy JavaScript and CSS.',
+        description: 'Star rating badges, carousel modal scripts, and photo grids.',
         snippetPatterns: ['loox-rating.liquid'],
         status: 'suspected_orphan',
         matchReasons: [{ type: 'external_script', evidence: 'https://loox.io/widget/loox.js?shop=demo.myshopify.com' }]
       },
       {
         appId: 'hotjar',
-        name: 'Hotjar: Heatmaps & Screen Recording',
+        name: 'Hotjar: User Session Recordings',
         category: 'Analytics & Heatmaps',
         speedPenalty: 'High',
         avgSizeKB: 190,
         avgDelayMs: 450,
-        description: 'Hotjar maintains continuous DOM mutation observers to record user sessions.',
+        description: 'Continuous DOM mutation observers logging user clicks and scrolls.',
         snippetPatterns: ['hotjar.liquid'],
         status: 'suspected_orphan',
         matchReasons: [{ type: 'inline_script', evidence: '(function(h,o,t,j,a,r){ ... static.hotjar.com ... })' }]
@@ -486,14 +523,14 @@ function getMockDemoScanResult() {
         speedPenalty: 'Medium',
         avgSizeKB: 160,
         avgDelayMs: 270,
-        description: 'ReConvert injects upsell widget triggers on product and thank you pages.',
+        description: 'Post-purchase upsell triggers and cart intercept listeners.',
         snippetPatterns: ['reconvert.liquid'],
         status: 'suspected_orphan',
         matchReasons: [{ type: 'external_script', evidence: 'https://cdn.reconvert.io/assets/stik-reconvert.js' }]
       }
     ],
     unknownExternalScripts: [
-      { url: 'https://tracking-unidentified-analytics.org/tag.js', snippet: 'src="https://tracking-unidentified-analytics.org/tag.js"' }
+      { url: 'https://ad-pixel-unidentified-collector.org/pixel.js', snippet: 'src="https://ad-pixel-unidentified-collector.org/pixel.js"' }
     ]
   };
 }
