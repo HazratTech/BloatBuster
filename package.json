@@ -1,0 +1,27 @@
+{
+  "name": "bloatbuster",
+  "version": "1.0.0",
+  "description": "BloatBuster: Clean Theme Code - Find and remove leftover app code and dead scripts",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "server": "node --watch server.js",
+    "dev": "npx @shopify/cli app dev",
+    "deploy": "npx @shopify/cli app deploy",
+    "test": "node test/scanner.test.js"
+  },
+  "keywords": [
+    "shopify",
+    "theme-cleaner",
+    "leftover-code",
+    "page-speed",
+    "core-web-vitals",
+    "script-cleaner"
+  ],
+  "author": "BloatBuster Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@shopify/cli": "^4.7.1"
+  }
+}

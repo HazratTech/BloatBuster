@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BloatBuster: Clean Theme Code | Shopify Script & Orphan Cleaner</title>
+  <meta name="description" content="Scan Shopify storefronts and theme liquid files for dead scripts, leftover uninstalled app code, and slow tracking pixels. Boost PageSpeed and Core Web Vitals.">
+  <meta name="shopify-api-key" content="468869026551455874d932a9608b7494">
+  <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand-wrapper">
+        <div class="logo-badge">⚡</div>
+        <div>
+          <div class="brand-title">
+            BloatBuster
+            <span class="brand-tag">ASO Edition</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-dim);">Theme Code & Leftover Script Cleaner</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-pro" id="openProModal">
+          <span>✨</span>
+          <span>Automated Cleanup Pro ($19/mo)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="scanner">Storefront Scanner</button>
+      <button class="tab-btn" data-tab="liquid">Theme.liquid Inspector</button>
+      <button class="tab-btn" data-tab="signatures">App Signatures (52)</button>
+    </div>
+
+    <!-- TAB 1: Storefront Scanner -->
+    <div id="tab-scanner" class="tab-content">
+      <div class="hero-card">
+        <h1 class="hero-title">Bust Leftover App Scripts & Speed Up Your Theme</h1>
+        <p class="hero-desc">
+          When you uninstall Shopify apps, dead tracking pixels and heavy JS libraries stay behind in your theme. Scan your live storefront to identify every orphaned script dragging down your Google PageSpeed score.
+        </p>
+
+        <form id="scanForm" class="search-bar">
+          <input 
+            type="text" 
+            id="storeUrlInput" 
+            class="search-input" 
+            placeholder="Enter Shopify store URL (e.g. gymshark.com or yourstore.myshopify.com)" 
+            required 
+            autocomplete="off"
+          />
+          <button type="submit" class="btn-scan" id="scanSubmitBtn">
+            <span>⚡</span>
+            <span>Scan Storefront</span>
+          </button>
+        </form>
+
+        <div class="demo-chips">
+          <span>Try quick demo:</span>
+          <button type="button" class="chip" data-url="gymshark.com">Gymshark</button>
+          <button type="button" class="chip" data-url="allbirds.com">Allbirds</button>
+          <button type="button" class="chip" data-url="kith.com">Kith</button>
+          <button type="button" class="chip" data-url="demo-bloated-store">Sample Bloated Store</button>
+        </div>
+      </div>
+
+      <!-- Scanning State Indicator -->
+      <div id="scanningState" class="scanning-state">
+        <div class="spinner"></div>
+        <div class="scanning-text" id="scanStatusMsg">Connecting to Shopify Storefront...</div>
+        <div class="scanning-subtext">Fetching HTML &bull; Extracting script tags &bull; Matching 52 App Signatures</div>
+      </div>
+
+      <!-- Report View -->
+      <div id="reportView" class="report-view">
+        <!-- KPI Grid -->
+        <div class="score-grid">
+          <div class="kpi-card main-gauge">
+            <div class="gauge-circle" id="gaugeCircle">
+              <span class="gauge-num" id="scoreNum">54</span>
+              <span class="gauge-label" id="scoreGrade">Grade F</span>
+            </div>
+            <div style="font-weight: 700; font-size: 15px;" id="headlineText">Critical Theme Bloat</div>
+            <div style="font-size: 12px; color: var(--text-dim);" id="storeDomainDisplay">mystore.com</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Orphaned Scripts Detected</div>
+            <div class="kpi-value" style="color: var(--alert-red);" id="kpiOrphans">4 Apps</div>
+            <div class="kpi-desc">Dead third-party integrations still firing on page load.</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Wasted Data Download</div>
+            <div class="kpi-value" style="color: var(--warning-amber);" id="kpiWastedKB">745 KB</div>
+            <div class="kpi-desc">Unnecessary network payload slowing mobile shoppers.</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Estimated Page Speed Drag</div>
+            <div class="kpi-value" style="color: var(--info-blue);" id="kpiDelay">+1.42s</div>
+            <div class="kpi-desc">Estimated CPU thread blocking and execution delay.</div>
+          </div>
+        </div>
+
+        <!-- Detected Findings List -->
+        <div class="findings-card">
+          <div class="findings-header">
+            <div>
+              <div class="findings-title">Detected Third-Party Integrations</div>
+              <div style="font-size: 12px; color: var(--text-dim);">Toggle off any apps you have already uninstalled to update your Bloat Score.</div>
+            </div>
+            <span class="findings-badge" id="findingsBadge">4 Uninstalled Scripts</span>
+          </div>
+          <div class="findings-list" id="findingsContainer">
+            <!-- Injected dynamically by app.js -->
+          </div>
+        </div>
+
+        <!-- Unknown External Scripts Box -->
+        <div class="findings-card" id="unknownSection" style="display: none;">
+          <div class="findings-header">
+            <div class="findings-title">Unidentified Third-Party Scripts</div>
+            <span class="tag-severity severity-medium" id="unknownCountBadge">0 Scripts</span>
+          </div>
+          <div style="padding: 16px 24px; font-size: 13px; color: var(--text-muted);">
+            These scripts do not belong to Shopify's core CDN and may be custom tracking tags or unlisted apps.
+          </div>
+          <div id="unknownContainer" style="padding: 0 24px 20px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Theme.liquid Inspector -->
+    <div id="tab-liquid" class="tab-content" style="display: none;">
+      <div class="hero-card" style="text-align: left;">
+        <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 6px;">Inspect Liquid Theme Code Line-by-Line</h2>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+          Paste code from your <code>layout/theme.liquid</code> or snippets to instantly pinpoint exact line numbers of dead app renders (e.g. Klaviyo, Loox, Judge.me, Hotjar).
+        </p>
+
+        <textarea 
+          id="liquidCodeInput" 
+          style="width: 100%; height: 220px; background: #0B0F17; border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: #38BDF8; font-family: monospace; font-size: 13px; padding: 14px; outline: none; margin-bottom: 14px;"
+          placeholder="Paste layout/theme.liquid content here..."
+        ></textarea>
+        
+        <button class="btn-scan" id="scanLiquidBtn">
+          <span>🔍</span>
+          <span>Analyze Liquid Code</span>
+        </button>
+      </div>
+
+      <div id="liquidResultsCard" class="findings-card" style="display: none;">
+        <div class="findings-header">
+          <div class="findings-title">Liquid Code Findings</div>
+          <span class="findings-badge" id="liquidFindingsBadge">0 Found</span>
+        </div>
+        <div id="liquidFindingsContainer"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: App Signatures Database -->
+    <div id="tab-signatures" class="tab-content" style="display: none;">
+      <div class="findings-card">
+        <div class="findings-header">
+          <div>
+            <div class="findings-title">Supported Shopify App Signatures</div>
+            <div style="font-size: 12px; color: var(--text-dim);">BloatBuster recognizes code signatures for 52 of the most popular Shopify apps.</div>
+          </div>
+          <input type="text" id="filterSignaturesInput" placeholder="Filter apps..." style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 13px; outline: none;">
+        </div>
+        <div id="signaturesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; padding: 24px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Excision Guide Modal (Free Tier) -->
+  <div id="excisionModal" class="modal-backdrop">
+    <div class="modal-content">
+      <button class="modal-close" id="closeExcisionModal">&times;</button>
+      <h3 style="font-size: 18px; margin-bottom: 6px;" id="modalAppTitle">Safe Removal Guide</h3>
+      <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        Follow these steps to safely remove this leftover code from your theme:
+      </div>
+      
+      <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Detected Code:</div>
+      <div class="code-box" id="modalOriginalCode"></div>
+
+      <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Recommended Safe Replacement (Commented Out):</div>
+      <div class="code-box" id="modalReplacementCode" style="color: #00D28C;"></div>
+
+      <div style="margin-top: 16px; margin-bottom: 20px;">
+        <ol style="padding-left: 18px; font-size: 13px; color: var(--text-muted); line-height: 1.8;" id="modalStepsList"></ol>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <a id="modalEditorLink" href="#" target="_blank" class="btn-scan" style="flex: 1; text-align: center; text-decoration: none; justify-content: center;">
+          <span>🛠️</span>
+          <span>Open Theme Code Editor</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pro Tier Upgrade Modal ($19/mo) -->
+  <div id="proModal" class="modal-backdrop">
+    <div class="modal-content" style="max-width: 520px; text-align: center;">
+      <button class="modal-close" id="closeProModal">&times;</button>
+      <div style="font-size: 38px; margin-bottom: 12px;">🛡️</div>
+      <h3 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">BloatBuster Automated Pro</h3>
+      <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">
+        Why clean theme code manually? Protect your store from theme code rot automatically.
+      </p>
+
+      <div style="text-align: left; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 24px; font-size: 13px; line-height: 1.8;">
+        <div>✅ <strong>1-Click Automated Theme Cleaner:</strong> Purges dead snippets in 1 second.</div>
+        <div>✅ <strong>Automatic Theme Backup:</strong> Creates a duplicate safety backup before any cleanup.</div>
+        <div>✅ <strong>24/7 Uninstall Watchdog:</strong> Instant alert when a newly removed app leaves dead code.</div>
+        <div>✅ <strong>Weekly Theme Health Audit:</strong> Prevent hidden script bloat and maintain 90+ PageSpeed.</div>
+      </div>
+
+      <div style="font-size: 26px; font-weight: 800; margin-bottom: 4px;">$19 <span style="font-size: 14px; color: var(--text-dim); font-weight: 400;">/ month</span></div>
+      <div style="font-size: 12px; color: var(--shopify-green); font-weight: 600; margin-bottom: 20px;">7-Day Free Trial &bull; Cancel Anytime in Shopify Admin</div>
+
+      <button class="btn-pro" style="width: 100%; justify-content: center; padding: 14px; font-size: 15px;" onclick="alert('In production, this connects to Shopify App Billing API (RecurringApplicationCharge) for $19/month.')">
+        Start 7-Day Free Trial
+      </button>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
