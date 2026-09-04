@@ -98,14 +98,14 @@ async function initBilling() {
             window.location.href = data.confirmationUrl;
           }
         } else if (data.error) {
-          alert(`Shopify Billing Notice: ${data.error}`);
           startTrialBtn.disabled = false;
           startTrialBtn.textContent = 'Start 7-Day Free Trial';
+          alert(`Shopify Partner Notice:\n\n${data.error}\n\nTo enable billing, ensure this app is configured with Public Distribution in your Shopify Partner Dashboard (partners.shopify.com).`);
         }
       } catch (err) {
-        alert(`Failed to start subscription: ${err.message}`);
         startTrialBtn.disabled = false;
         startTrialBtn.textContent = 'Start 7-Day Free Trial';
+        alert(`Failed to start subscription: ${err.message}`);
       }
     });
   }
