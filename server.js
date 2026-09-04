@@ -104,6 +104,41 @@ function saveSession(shop, sessionData) {
   }
 }
 
+async function getValidAccessToken(shop) {
+  const session = getSession(shop);
+  if (!session || !session.accessToken) return null;
+
+  // Refresh expiring token if within 5 minutes of expiration
+  if (session.expiresAt && Date.now() > session.expiresAt - 300000 && session.refreshToken) {
+    try {
+      console.log(`[BloatBuster Auth] Refreshing expiring offline token for ${shop}...`);
+      const refreshRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: SHOPIFY_API_KEY,
+          client_secret: SHOPIFY_API_SECRET,
+          grant_type: 'refresh_token',
+          refresh_token: session.refreshToken
+        })
+      });
+      const refreshData = await refreshRes.json();
+      if (refreshData.access_token) {
+        saveSession(shop, {
+          accessToken: refreshData.access_token,
+          expiresAt: refreshData.expires_in ? Date.now() + (refreshData.expires_in * 1000) : null,
+          refreshToken: refreshData.refresh_token || session.refreshToken
+        });
+        return refreshData.access_token;
+      }
+    } catch (err) {
+      console.warn('Token auto-refresh failed:', err.message);
+    }
+  }
+
+  return session.accessToken;
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname;
@@ -142,7 +177,7 @@ const server = http.createServer(async (req, res) => {
         return res.end('Missing shop or code parameter in OAuth callback.');
       }
 
-      console.log(`[BloatBuster] Exchanging OAuth code for permanent access token: ${shop}`);
+      console.log(`[BloatBuster] Exchanging OAuth code for modern expiring token: ${shop}`);
       try {
         const tokenRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
           method: 'POST',
@@ -150,18 +185,22 @@ const server = http.createServer(async (req, res) => {
           body: JSON.stringify({
             client_id: SHOPIFY_API_KEY,
             client_secret: SHOPIFY_API_SECRET,
-            code
+            code,
+            expiring: 1
           })
         });
         const tokenData = await tokenRes.json();
+        console.log('[BloatBuster OAuth Token Response]:', JSON.stringify({ ...tokenData, access_token: tokenData.access_token ? '[REDACTED]' : null }));
         const cleanShop = shop.replace('.myshopify.com', '');
         
         if (tokenData.access_token) {
           saveSession(shop, {
             accessToken: tokenData.access_token,
-            scope: tokenData.scope
+            scope: tokenData.scope,
+            expiresAt: tokenData.expires_in ? Date.now() + (tokenData.expires_in * 1000) : null,
+            refreshToken: tokenData.refresh_token || null
           });
-          console.log(`[BloatBuster] Successfully saved access token for store: ${shop}`);
+          console.log(`[BloatBuster] Successfully saved expiring token for store: ${shop}`);
 
           // If user came from the subscription flow, create the subscription charge immediately!
           if (state === 'subscribe') {
@@ -245,9 +284,11 @@ const server = http.createServer(async (req, res) => {
       const proto = req.headers['x-forwarded-proto'] || 'https';
       const returnUrl = `${proto}://${host}/api/billing/confirm?shop=${cleanShop}`;
 
+      const accessToken = await getValidAccessToken(cleanShop);
+
       // If store hasn't completed OAuth yet, send full authorize URL
-      if (!session || !session.accessToken) {
-        console.log(`[BloatBuster Billing] No token found for ${cleanShop}. Generating full authorize URL.`);
+      if (!accessToken) {
+        console.log(`[BloatBuster Billing] No valid token found for ${cleanShop}. Generating full authorize URL.`);
         const redirectUri = encodeURIComponent(`${proto}://${host}/auth/callback`);
         const authUrl = `https://${cleanShop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&redirect_uri=${redirectUri}&state=subscribe`;
         return sendJson(res, 200, {
@@ -298,7 +339,7 @@ const server = http.createServer(async (req, res) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': session.accessToken
+          'X-Shopify-Access-Token': accessToken
         },
         body: JSON.stringify(graphqlQuery)
       });
