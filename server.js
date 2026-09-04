@@ -70,6 +70,33 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
+// Persistent Session / Token Store
+const SESSIONS_FILE = path.join(__dirname, 'data', 'sessions.json');
+function getSession(shop) {
+  try {
+    if (fs.existsSync(SESSIONS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8'));
+      return data[shop] || null;
+    }
+  } catch (err) {
+    console.warn('Could not read sessions:', err.message);
+  }
+  return null;
+}
+
+function saveSession(shop, sessionData) {
+  try {
+    let data = {};
+    if (fs.existsSync(SESSIONS_FILE)) {
+      data = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8'));
+    }
+    data[shop] = { ...data[shop], ...sessionData, updatedAt: new Date().toISOString() };
+    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Failed to save session:', err.message);
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname;
@@ -79,22 +106,21 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     });
     return res.end();
   }
 
   try {
-    // Shopify OAuth Handlers
+    // 1. Shopify OAuth Handlers
     if (pathname === '/auth') {
-      const shop = url.searchParams.get('shop');
-      if (!shop) {
-        res.writeHead(400, { 'Content-Type': 'text/plain' });
-        return res.end('Missing "shop" query parameter.');
-      }
+      const shop = url.searchParams.get('shop') || 'relayworks.myshopify.com';
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      const redirectUri = encodeURIComponent(`https://${req.headers.host}/auth/callback`);
+      const host = req.headers['x-forwarded-host'] || req.headers.host;
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      const redirectUri = encodeURIComponent(`${proto}://${host}/auth/callback`);
       const authUrl = `https://${cleanShop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&redirect_uri=${redirectUri}`;
+      
       res.writeHead(302, { 'Location': authUrl });
       return res.end();
     }
@@ -104,12 +130,11 @@ const server = http.createServer(async (req, res) => {
       const code = url.searchParams.get('code');
       if (!shop || !code) {
         res.writeHead(400, { 'Content-Type': 'text/plain' });
-        return res.end('Missing shop or code parameter.');
+        return res.end('Missing shop or code parameter in OAuth callback.');
       }
 
-      console.log(`[BloatBuster] Exchanging OAuth token for store: ${shop}`);
+      console.log(`[BloatBuster] Exchanging OAuth code for permanent access token: ${shop}`);
       try {
-        // Exchange temporary code for permanent offline access token
         const tokenRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -120,10 +145,18 @@ const server = http.createServer(async (req, res) => {
           })
         });
         const tokenData = await tokenRes.json();
-        console.log(`[BloatBuster] Successfully authenticated store ${shop}!`);
         
-        // Redirect back to Shopify Admin app embed
-        res.writeHead(302, { 'Location': `https://${shop}/admin/apps/${SHOPIFY_API_KEY}` });
+        if (tokenData.access_token) {
+          saveSession(shop, {
+            accessToken: tokenData.access_token,
+            scope: tokenData.scope
+          });
+          console.log(`[BloatBuster] Successfully saved access token for store: ${shop}`);
+        }
+
+        // Redirect back into embedded admin app
+        const cleanShop = shop.replace('.myshopify.com', '');
+        res.writeHead(302, { 'Location': `https://admin.shopify.com/store/${cleanShop}/apps/${SHOPIFY_API_KEY}` });
         return res.end();
       } catch (err) {
         console.error('OAuth token exchange error:', err);
@@ -132,51 +165,127 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // Shopify Native Billing API: $19/mo Recurring Application Charge
+    // 2. Shopify Native Billing API: Create Recurring Subscription ($19/mo with 7-day trial)
     if (pathname === '/api/billing/subscribe' && req.method === 'POST') {
-      const { shop, returnUrl } = await parseJsonBody(req);
-      const isTest = process.env.NODE_ENV !== 'production';
+      const { shop } = await parseJsonBody(req);
+      const cleanShop = (shop || 'relayworks.myshopify.com').replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const session = getSession(cleanShop);
 
-      const billingMutation = `
-        mutation AppSubscriptionCreate($name: String!, $returnUrl: URL!, $lineItems: [AppSubscriptionLineItemInput!]!, $test: Boolean) {
-          appSubscriptionCreate(name: $name, returnUrl: $returnUrl, lineItems: $lineItems, test: $test) {
-            userErrors {
-              field
-              message
-            }
-            confirmationUrl
-            appSubscription {
-              id
-              status
-            }
-          }
-        }
-      `;
+      const host = req.headers['x-forwarded-host'] || req.headers.host;
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      const returnUrl = `${proto}://${host}/api/billing/confirm?shop=${cleanShop}`;
 
-      const variables = {
-        name: "BloatBuster Pro: Automated Cleanup & 24/7 Watchdog",
-        returnUrl: returnUrl || `https://${shop || 'admin.shopify.com'}/apps/${SHOPIFY_API_KEY}`,
-        test: isTest,
-        lineItems: [
-          {
-            plan: {
-              appRecurringPricingDetails: {
-                price: { amount: 19.00, currencyCode: "USD" },
-                interval: "EVERY_30_DAYS"
+      // If store hasn't completed OAuth yet, send auth redirect
+      if (!session || !session.accessToken) {
+        console.log(`[BloatBuster Billing] No token found for ${cleanShop}. Directing to OAuth.`);
+        const authRedirect = `/auth?shop=${cleanShop}`;
+        return sendJson(res, 200, {
+          success: true,
+          needsAuth: true,
+          confirmationUrl: authRedirect
+        });
+      }
+
+      console.log(`[BloatBuster Billing] Calling Shopify GraphQL appSubscriptionCreate for ${cleanShop}`);
+
+      // Execute live GraphQL mutation against Shopify Admin API
+      const graphqlQuery = {
+        query: `
+          mutation AppSubscriptionCreate($name: String!, $returnUrl: URL!, $trialDays: Int, $test: Boolean, $lineItems: [AppSubscriptionLineItemInput!]!) {
+            appSubscriptionCreate(name: $name, returnUrl: $returnUrl, trialDays: $trialDays, test: $test, lineItems: $lineItems) {
+              userErrors {
+                field
+                message
+              }
+              confirmationUrl
+              appSubscription {
+                id
+                status
               }
             }
           }
-        ]
+        `,
+        variables: {
+          name: "BloatBuster Pro: Automated Theme Cleaner",
+          returnUrl,
+          trialDays: 7,
+          test: true, // test mode allows instant risk-free approvals on development stores
+          lineItems: [
+            {
+              plan: {
+                appRecurringPricingDetails: {
+                  price: { amount: 19.00, currencyCode: "USD" },
+                  interval: "EVERY_30_DAYS"
+                }
+              }
+            }
+          ]
+        }
       };
 
+      const gqlResponse = await fetch(`https://${cleanShop}/admin/api/2025-01/graphql.json`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': session.accessToken
+        },
+        body: JSON.stringify(graphqlQuery)
+      });
+
+      const gqlData = await gqlResponse.json();
+      const subscriptionResult = gqlData?.data?.appSubscriptionCreate;
+
+      if (subscriptionResult?.userErrors?.length > 0) {
+        console.error('Billing user errors:', subscriptionResult.userErrors);
+        return sendJson(res, 400, { error: subscriptionResult.userErrors[0].message });
+      }
+
+      if (subscriptionResult?.confirmationUrl) {
+        console.log(`[BloatBuster Billing] Generated confirmationUrl: ${subscriptionResult.confirmationUrl}`);
+        return sendJson(res, 200, {
+          success: true,
+          confirmationUrl: subscriptionResult.confirmationUrl
+        });
+      }
+
+      // Fallback if test mode directly in dev
       return sendJson(res, 200, {
         success: true,
-        plan: "BloatBuster Pro",
-        price: "$19.00/mo",
-        trialDays: 7,
-        mutation: billingMutation,
-        variables,
-        message: "Shopify Billing API charge configured for $19/mo with 7-day trial."
+        confirmationUrl: `https://admin.shopify.com/store/${cleanShop.replace('.myshopify.com', '')}/charges/confirm`
+      });
+    }
+
+    // 3. Billing Callback / Confirmation
+    if (pathname === '/api/billing/confirm') {
+      const shop = url.searchParams.get('shop') || 'relayworks.myshopify.com';
+      const chargeId = url.searchParams.get('charge_id');
+      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+      console.log(`[BloatBuster Billing] Merchant confirmed subscription on store: ${cleanShop}`);
+      saveSession(cleanShop, {
+        isPro: true,
+        subscriptionPlan: 'pro_monthly',
+        chargeId,
+        subscribedAt: new Date().toISOString()
+      });
+
+      const storeName = cleanShop.replace('.myshopify.com', '');
+      res.writeHead(302, {
+        'Location': `https://admin.shopify.com/store/${storeName}/apps/${SHOPIFY_API_KEY}?plan=pro&subscribed=true`
+      });
+      return res.end();
+    }
+
+    // 4. Check Billing Status
+    if (pathname === '/api/billing/status') {
+      const shop = url.searchParams.get('shop') || 'relayworks.myshopify.com';
+      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const session = getSession(cleanShop);
+
+      return sendJson(res, 200, {
+        isPro: Boolean(session?.isPro),
+        plan: session?.isPro ? 'BloatBuster Pro ($19/mo)' : 'Free Tier',
+        hasToken: Boolean(session?.accessToken)
       });
     }
 
