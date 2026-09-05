@@ -113,8 +113,8 @@
                 type="text" 
                 id="storeUrlInput" 
                 class="polaris-input" 
-                value="relayworks.myshopify.com" 
-                placeholder="Enter store URL (e.g. gymshark.com or yourstore.myshopify.com)" 
+                value="" 
+                placeholder="Enter store domain (e.g. yourstore.myshopify.com or yourbrand.com)" 
                 required 
               />
             </div>
@@ -126,14 +126,6 @@
               Scan Storefront
             </button>
           </form>
-
-          <div class="demo-pills">
-            <span>Quick test audit:</span>
-            <button type="button" class="pill-btn" data-url="relayworks.myshopify.com">My Store</button>
-            <button type="button" class="pill-btn" data-url="allbirds.com">Allbirds</button>
-            <button type="button" class="pill-btn" data-url="gymshark.com">Gymshark</button>
-            <button type="button" class="pill-btn" data-url="demo-bloated-store">Sample Bloated Store</button>
-          </div>
         </div>
 
         <!-- Scanning Indicator -->
@@ -284,13 +276,13 @@
       </div>
       <div class="modal-foot">
         <button class="btn-secondary" onclick="document.getElementById('excisionModal').style.display='none'">Close</button>
-        <a id="modalEditorLink" href="#" target="_blank" class="btn-primary" style="text-decoration: none;">
+        <button type="button" id="modalEditorBtn" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M4.25 2A2.25 2.25 0 0 0 2 4.25v11.5A2.25 2.25 0 0 0 4.25 18h11.5A2.25 2.25 0 0 0 18 15.75V10.5a.75.75 0 0 0-1.5 0v5.25a.75.75 0 0 1-.75.75H4.25a.75.75 0 0 1-.75-.75V4.25a.75.75 0 0 1 .75-.75H9.5a.75.75 0 0 0 0-1.5H4.25Z" clip-rule="evenodd"/>
             <path fill-rule="evenodd" d="M12.25 2.75a.75.75 0 0 1 .75-.75h4.25c.414 0 .75.336.75.75v4.25a.75.75 0 0 1-1.5 0V4.56l-5.72 5.72a.75.75 0 0 1-1.06-1.06l5.72-5.72h-2.44a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/>
           </svg>
           Open in Shopify Theme Editor
-        </a>
+        </button>
       </div>
     </div>
   </div>
