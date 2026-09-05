@@ -19,10 +19,40 @@ document.addEventListener('DOMContentLoaded', () => {
 // Helper to get current clean shop domain
 function getCurrentShop() {
   const params = new URLSearchParams(window.location.search);
-  const shopFromUrl = params.get('shop');
-  const storeInput = document.getElementById('storeUrlInput');
-  const raw = shopFromUrl || storeInput?.value || '';
-  return raw.replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+  let shop = params.get('shop');
+
+  // Decode from App Bridge host param (e.g. atob("admin.shopify.com/store/xyz") -> "xyz.myshopify.com")
+  if (!shop) {
+    const host = params.get('host');
+    if (host) {
+      try {
+        const decoded = atob(host);
+        const match = decoded.match(/store\/([a-zA-Z0-9_-]+)/);
+        if (match && match[1]) {
+          shop = `${match[1]}.myshopify.com`;
+        }
+      } catch (e) {}
+    }
+  }
+
+  // Fallback to referrer pathname
+  if (!shop && document.referrer) {
+    try {
+      const ref = new URL(document.referrer);
+      const match = ref.pathname.match(/\/store\/([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        shop = `${match[1]}.myshopify.com`;
+      }
+    } catch (e) {}
+  }
+
+  // Fallback to storeUrlInput value if user typed it
+  if (!shop) {
+    const storeInput = document.getElementById('storeUrlInput');
+    shop = storeInput?.value || '';
+  }
+
+  return (shop || '').replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
 }
 
 // Check and Initialize Billing Status
@@ -127,14 +157,22 @@ async function initBilling() {
 
 // 1. Detect Shop Context from Shopify Admin iframe query params
 function initShopContext() {
-  const params = new URLSearchParams(window.location.search);
-  const shop = params.get('shop');
+  const shop = getCurrentShop();
   const storeInput = document.getElementById('storeUrlInput');
   const domainHeader = document.getElementById('storeDomainHeader');
 
   if (shop) {
-    if (storeInput) storeInput.value = shop;
+    if (storeInput && !storeInput.value) storeInput.value = `https://${shop}/`;
     if (domainHeader) domainHeader.textContent = shop;
+  }
+
+  if (storeInput && domainHeader) {
+    storeInput.addEventListener('input', () => {
+      const current = storeInput.value.replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+      if (current) {
+        domainHeader.textContent = current;
+      }
+    });
   }
 }
 
@@ -238,6 +276,12 @@ async function executeScan(storeUrl) {
   reportView.style.display = 'none';
   scanningState.style.display = 'block';
   submitBtn.disabled = true;
+
+  const cleanDomain = storeUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+  const domainHeader = document.getElementById('storeDomainHeader');
+  if (domainHeader && cleanDomain) {
+    domainHeader.textContent = cleanDomain;
+  }
 
   statusMsg.textContent = `Establishing connection to ${storeUrl}...`;
   setTimeout(() => { statusMsg.textContent = 'Extracting storefront scripts & preconnect tags...'; }, 500);
