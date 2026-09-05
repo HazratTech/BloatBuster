@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initBilling();
   loadSignatures();
   setupScanForm();
-  setupDemoPills();
   setupLiquidInspector();
   setupModals();
 });
@@ -22,8 +21,8 @@ function getCurrentShop() {
   const params = new URLSearchParams(window.location.search);
   const shopFromUrl = params.get('shop');
   const storeInput = document.getElementById('storeUrlInput');
-  const raw = shopFromUrl || storeInput?.value || 'relayworks.myshopify.com';
-  return raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const raw = shopFromUrl || storeInput?.value || '';
+  return raw.replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
 }
 
 // Check and Initialize Billing Status
@@ -220,22 +219,13 @@ function setupScanForm() {
 
   if (btnTop) {
     btnTop.addEventListener('click', () => {
-      const url = input.value.trim() || 'relayworks.myshopify.com';
-      executeScan(url);
+      const url = input.value.trim() || getCurrentShop();
+      if (url) {
+        input.value = url;
+        executeScan(url);
+      }
     });
   }
-}
-
-function setupDemoPills() {
-  const pills = document.querySelectorAll('.pill-btn[data-url]');
-  pills.forEach(pill => {
-    pill.addEventListener('click', () => {
-      const url = pill.dataset.url;
-      const input = document.getElementById('storeUrlInput');
-      input.value = url;
-      executeScan(url);
-    });
-  });
 }
 
 // 5. Execute Storefront Scan
@@ -254,23 +244,16 @@ async function executeScan(storeUrl) {
   setTimeout(() => { statusMsg.textContent = 'Comparing DOM against 52 verified app signatures...'; }, 1100);
 
   try {
-    let result;
-    if (storeUrl === 'demo-bloated-store') {
-      result = getMockDemoScanResult();
-      await new Promise(r => setTimeout(r, 1200));
-    } else {
-      const res = await fetch('/api/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storeUrl, activeApps: Array.from(activeAppOverrides) })
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Scan error HTTP ${res.status}`);
-      }
-      result = await res.json();
+    const res = await fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeUrl, activeApps: Array.from(activeAppOverrides) })
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `Scan error HTTP ${res.status}`);
     }
-
+    const result = await res.json();
     currentScanData = result;
     activeAppOverrides.clear();
     renderReport(result);
@@ -417,7 +400,7 @@ window.showExcisionModal = function(appId) {
   if (!app) return;
 
   const modal = document.getElementById('excisionModal');
-  document.getElementById('modalAppTitle').textContent = `Removal Protocol &bull; ${app.name}`;
+  document.getElementById('modalAppTitle').textContent = `Removal Protocol • ${app.name}`;
 
   const evidence = app.matchReasons?.[0]?.evidence || `<script src="...${appId}..."></script>`;
   document.getElementById('modalOriginalCode').textContent = evidence;
@@ -432,10 +415,6 @@ window.showExcisionModal = function(appId) {
     <li>Delete the script tag or replace with the safe comment above.</li>
     <li>Click <strong>Save</strong> in the upper-right corner.</li>
   `;
-
-  const cleanShop = (currentScanData?.storeUrl || 'store.myshopify.com').replace('.myshopify.com', '').replace(/^https?:\/\//, '');
-  const editorUrl = `https://admin.shopify.com/store/${cleanShop}/themes/current/editor?key=layout/theme.liquid`;
-  document.getElementById('modalEditorLink').href = editorUrl;
 
   modal.style.display = 'flex';
 };
@@ -517,6 +496,32 @@ function setupModals() {
     closeExcisionModal.addEventListener('click', () => excisionModal.style.display = 'none');
   }
 
+  // Open Shopify Theme Editor reliably
+  const modalEditorBtn = document.getElementById('modalEditorBtn');
+  if (modalEditorBtn) {
+    modalEditorBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const shop = getCurrentShop();
+      const storeHandle = shop.replace('.myshopify.com', '').replace(/^https?:\/\//, '').split('/')[0];
+      
+      const editorUrl = (storeHandle && !storeHandle.includes('.'))
+        ? `https://admin.shopify.com/store/${storeHandle}/themes/current/editor?key=layout%2Ftheme.liquid`
+        : `https://${shop || 'admin.shopify.com'}/admin/themes/current/editor`;
+
+      console.log('[BloatBuster] Opening Theme Editor:', editorUrl);
+      
+      try {
+        if (window.shopify && typeof window.shopify.open === 'function') {
+          window.shopify.open(editorUrl, '_top');
+        } else {
+          window.open(editorUrl, '_blank', 'noopener,noreferrer');
+        }
+      } catch (err) {
+        window.open(editorUrl, '_blank', 'noopener,noreferrer');
+      }
+    });
+  }
+
   const proModal = document.getElementById('proModal');
   const openProModal = document.getElementById('openProModal');
   const closeProModal = document.getElementById('closeProModal');
@@ -559,88 +564,4 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, m => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[m]));
-}
-
-function getMockDemoScanResult() {
-  return {
-    storeUrl: 'relayworks-sample.myshopify.com',
-    finalUrl: 'https://relayworks.myshopify.com',
-    scanDurationMs: 680,
-    score: 52,
-    grade: 'F',
-    badgeColor: '#D72C0D',
-    headline: 'Critical Theme Debt Detected',
-    recommendation: '4 dead third-party scripts were found executing on your storefront.',
-    metrics: {
-      totalOrphans: 4,
-      highSeverityCount: 3,
-      mediumSeverityCount: 1,
-      lowSeverityCount: 0,
-      totalWastedKB: 745,
-      estimatedDelaySeconds: 1.42,
-      unknownScriptsCount: 1
-    },
-    summary: {
-      totalScriptsFound: 16,
-      externalScriptsCount: 10,
-      inlineScriptsCount: 6,
-      stylesheetsCount: 4,
-      suspectedOrphansCount: 4,
-      activeAppsCount: 0,
-      unidentifiedThirdPartyCount: 1
-    },
-    detectedApps: [
-      {
-        appId: 'klaviyo',
-        name: 'Klaviyo: Email & SMS',
-        category: 'Email & SMS Marketing',
-        speedPenalty: 'High',
-        avgSizeKB: 185,
-        avgDelayMs: 320,
-        description: 'Identity tracking, signup popups, and event listeners.',
-        snippetPatterns: ['klaviyo.liquid'],
-        status: 'suspected_orphan',
-        matchReasons: [{ type: 'external_script', evidence: 'https://static.klaviyo.com/onsite/js/klaviyo.js?company_id=XYZ123' }]
-      },
-      {
-        appId: 'loox',
-        name: 'Loox: Product Reviews & Photos',
-        category: 'Reviews & Social Proof',
-        speedPenalty: 'High',
-        avgSizeKB: 210,
-        avgDelayMs: 380,
-        description: 'Star rating badges, carousel modal scripts, and photo grids.',
-        snippetPatterns: ['loox-rating.liquid'],
-        status: 'suspected_orphan',
-        matchReasons: [{ type: 'external_script', evidence: 'https://loox.io/widget/loox.js?shop=demo.myshopify.com' }]
-      },
-      {
-        appId: 'hotjar',
-        name: 'Hotjar: User Session Recordings',
-        category: 'Analytics & Heatmaps',
-        speedPenalty: 'High',
-        avgSizeKB: 190,
-        avgDelayMs: 450,
-        description: 'Continuous DOM mutation observers logging user clicks and scrolls.',
-        snippetPatterns: ['hotjar.liquid'],
-        status: 'suspected_orphan',
-        matchReasons: [{ type: 'inline_script', evidence: '(function(h,o,t,j,a,r){ ... static.hotjar.com ... })' }]
-      },
-      {
-        appId: 'reconvert',
-        name: 'ReConvert: Post Purchase Upsell',
-        category: 'Upsells & Bundles',
-        speedPenalty: 'Medium',
-        avgSizeKB: 160,
-        avgDelayMs: 270,
-        description: 'Post-purchase upsell triggers and cart intercept listeners.',
-        snippetPatterns: ['reconvert.liquid'],
-        status: 'suspected_orphan',
-        matchReasons: [{ type: 'external_script', evidence: 'https://cdn.reconvert.io/assets/stik-reconvert.js' }]
-      }
-    ],
-    unknownExternalScripts: [
-      { url: 'https://ad-pixel-unidentified-collector.org/pixel.js', snippet: 'src="https://ad-pixel-unidentified-collector.org/pixel.js"' }
-    ]
-  };
 }
