@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1600, height=900">
+  <title>BloatBuster Feature Banner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1600px;
+      height: 900px;
+      background: #090d16;
+      font-family: 'Inter', -apple-system, sans-serif;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 100px;
+      color: #fff;
+    }
+    /* Subtle background tech grid & ambient glow */
+    .ambient-glow-1 {
+      position: absolute;
+      top: -150px;
+      left: -100px;
+      width: 650px;
+      height: 650px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+    .ambient-glow-2 {
+      position: absolute;
+      bottom: -150px;
+      right: 150px;
+      width: 750px;
+      height: 750px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+    .grid-lines {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+    }
+
+    /* Left Content Column */
+    .content-left {
+      width: 580px;
+      z-index: 10;
+    }
+    .app-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      letter-spacing: 0.3px;
+    }
+    .app-title {
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 18px;
+      background: linear-gradient(135deg, #ffffff 60%, #9ca3af 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .app-tagline {
+      font-size: 22px;
+      line-height: 1.45;
+      color: #94a3b8;
+      font-weight: 400;
+      margin-bottom: 36px;
+    }
+    .features-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 17px;
+      color: #e2e8f0;
+      font-weight: 500;
+    }
+    .feature-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #34d399;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    /* Right Preview Mockup */
+    .content-right {
+      width: 760px;
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-mockup-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 
+        0 25px 60px -15px rgba(0, 0, 0, 0.85),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        0 0 40px rgba(16, 185, 129, 0.15);
+      background: #1e293b;
+      transform: perspective(1200px) rotateY(-8deg) rotateX(4deg);
+      transition: transform 0.3s ease;
+    }
+    .card-mockup-header {
+      background: #111827;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .mockup-url {
+      margin-left: 12px;
+      font-size: 13px;
+      color: #64748b;
+      font-family: monospace;
+    }
+    .mockup-img {
+      width: 100%;
+      display: block;
+    }
+
+    /* Floating Metric Pill */
+    .floating-pill {
+      position: absolute;
+      bottom: -20px;
+      left: -30px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+      padding: 14px 22px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      backdrop-filter: blur(12px);
+      z-index: 20;
+    }
+    .pill-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: rgba(16, 185, 129, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .pill-text h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .pill-text p {
+      font-size: 13px;
+      color: #10b981;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+  <div class="grid-lines"></div>
+
+  <div class="content-left">
+    <div class="app-badge">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0 1 12 2v5h4a1 1 0 0 1 .82 1.573l-7 10A1 1 0 0 1 8 18v-5H4a1 1 0 0 1-.82-1.573l7-10a1 1 0 0 1 1.12-.381Z" clip-rule="evenodd"/>
+      </svg>
+      Shopify Theme Performance
+    </div>
+    <h1 class="app-title">BloatBuster</h1>
+    <p class="app-tagline">Clean leftover code and orphan scripts from deleted apps to speed up your Shopify store.</p>
+    
+    <div class="features-list">
+      <div class="feature-item">
+        <div class="feature-icon">✓</div>
+        <span>Detects orphan code from 50+ popular Shopify apps</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">✓</div>
+        <span>Calculates live Bloat Score & page speed impact</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">✓</div>
+        <span>Step-by-step safe excision guides with code diffs</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-right">
+    <div class="card-mockup-wrapper">
+      <div class="card-mockup-header">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="mockup-url">admin.shopify.com/apps/bloatbuster</span>
+      </div>
+      <img class="mockup-img" src="./screenshot-2-scan-results.png" alt="Scan Results">
+    </div>
+
+    <div class="floating-pill">
+      <div class="pill-icon">⚡</div>
+      <div class="pill-text">
+        <h4>Orphan Bloat Removed</h4>
+        <p>+32% Faster Storefront Load</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
