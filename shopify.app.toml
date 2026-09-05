@@ -4,7 +4,7 @@ client_id = "f3c6dde5474766c85897a2bd2567ea50"
 name = "BloatBuster: Clean Theme Code"
 application_url = "https://bloatbuster.relayworks.dev"
 embedded = true
-handle = "bloatbuster-clean-theme-code"
+handle = "bloatbuster-theme-cleaner"
 
 [build]
 automatically_update_urls_on_dev = true
@@ -12,17 +12,13 @@ automatically_update_urls_on_dev = true
 [webhooks]
 api_version = "2026-07"
 
-[[webhooks.subscriptions]]
-compliance_topics = [
-  "customers/data_request",
-  "customers/redact",
-  "shop/redact"
-]
-uri = "/webhooks/compliance"
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/compliance"
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
-[[webhooks.subscriptions]]
-topics = [ "app/uninstalled" ]
-uri = "/webhooks/app/uninstalled"
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/uninstalled"
+  topics = [ "app/uninstalled" ]
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
