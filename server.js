@@ -9,6 +9,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { fetchStorefrontHtml, scanStorefrontHtml, normalizeStoreUrl } from './lib/scanner/storefrontScanner.js';
 import { scanLiquidFile, scanSnippetFilenames } from './lib/scanner/themeScanner.js';
@@ -62,6 +63,30 @@ function parseJsonBody(req) {
   });
 }
 
+// Helper to parse raw request body buffer for HMAC verification
+function parseRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+// Verify Shopify Webhook HMAC-SHA256 signature
+function verifyShopifyHmac(rawBody, hmacHeader) {
+  if (!hmacHeader) return false;
+  try {
+    const calculated = crypto
+      .createHmac('sha256', SHOPIFY_API_SECRET)
+      .update(rawBody)
+      .digest('base64');
+    return crypto.timingSafeEqual(Buffer.from(calculated, 'utf8'), Buffer.from(hmacHeader, 'utf8'));
+  } catch (err) {
+    return false;
+  }
+}
+
 // Helper to send JSON responses
 function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
@@ -101,6 +126,21 @@ function saveSession(shop, sessionData) {
     fs.writeFileSync(SESSIONS_FILE, JSON.stringify(data, null, 2));
   } catch (err) {
     console.error('Failed to save session:', err.message);
+  }
+}
+
+function removeSession(shop) {
+  try {
+    if (fs.existsSync(SESSIONS_FILE)) {
+      let data = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8'));
+      if (data[shop]) {
+        delete data[shop];
+        fs.writeFileSync(SESSIONS_FILE, JSON.stringify(data, null, 2));
+        console.log(`[BloatBuster Session] Purged data for store: ${shop}`);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to purge session:', err.message);
   }
 }
 
@@ -154,6 +194,66 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
+    // 0. Shopify Mandatory Compliance & Lifecycle Webhooks (GDPR)
+    if (pathname.startsWith('/webhooks')) {
+      if (req.method !== 'POST') {
+        res.writeHead(405, { 'Content-Type': 'text/plain' });
+        return res.end('Method Not Allowed');
+      }
+
+      const hmac = req.headers['x-shopify-hmac-sha256'];
+      const topic = req.headers['x-shopify-topic'] || pathname.replace(/^\/webhooks\/?/, '');
+      const shopDomain = req.headers['x-shopify-shop-domain'];
+
+      const rawBody = await parseRawBody(req);
+
+      // Verify HMAC signature
+      const isValid = verifyShopifyHmac(rawBody, hmac);
+      if (!isValid) {
+        console.warn(`[BloatBuster Webhook] Rejected unauthorized webhook (Invalid HMAC) for topic: ${topic}`);
+        res.writeHead(401, { 'Content-Type': 'text/plain' });
+        return res.end('Unauthorized: Invalid HMAC signature');
+      }
+
+      let payload = {};
+      try {
+        payload = JSON.parse(rawBody.toString('utf8'));
+      } catch {
+        payload = {};
+      }
+
+      console.log(`[BloatBuster Webhook] Verified webhook received: topic=${topic} shop=${shopDomain || payload.myshopify_domain || 'unknown'}`);
+
+      // Handle App Uninstalled or Shop Redaction (Clean up session store)
+      if (topic === 'app/uninstalled' || topic === 'shop/redact') {
+        const targetShop = shopDomain || payload.myshopify_domain || payload.shop_domain;
+        if (targetShop) {
+          removeSession(targetShop);
+        }
+      }
+
+      // Mandatory compliance topics: customers/data_request, customers/redact, shop/redact
+      // BloatBuster does not store customer personal data, so we acknowledge with 200 OK immediately
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ success: true, topic, message: 'Acknowledged' }));
+    }
+
+    // Immediate OAuth installation check: If merchant installs from App Store without an active session
+    if ((pathname === '/' || pathname === '') && url.searchParams.has('shop')) {
+      const shop = url.searchParams.get('shop');
+      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const session = getSession(cleanShop);
+      if (!session || !session.accessToken) {
+        console.log(`[BloatBuster] Direct install/launch without session for ${cleanShop}. Redirecting to /auth.`);
+        const host = req.headers['x-forwarded-host'] || req.headers.host;
+        const proto = req.headers['x-forwarded-proto'] || 'https';
+        const redirectUri = encodeURIComponent(`${proto}://${host}/auth/callback`);
+        const authUrl = `https://${cleanShop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&redirect_uri=${redirectUri}`;
+        res.writeHead(302, { 'Location': authUrl });
+        return res.end();
+      }
+    }
+
     // 1. Shopify OAuth Handlers
     if (pathname === '/auth') {
       const shop = url.searchParams.get('shop') || 'relayworks.myshopify.com';
@@ -228,7 +328,7 @@ const server = http.createServer(async (req, res) => {
                   name: "BloatBuster Pro: Automated Theme Cleaner",
                   returnUrl,
                   trialDays: 7,
-                  test: true,
+                  test: process.env.SHOPIFY_BILLING_TEST === 'false' ? false : true,
                   lineItems: [
                     {
                       plan: {
@@ -321,7 +421,7 @@ const server = http.createServer(async (req, res) => {
           name: "BloatBuster Pro: Automated Theme Cleaner",
           returnUrl,
           trialDays: 7,
-          test: true,
+          test: process.env.SHOPIFY_BILLING_TEST === 'false' ? false : true,
           lineItems: [
             {
               plan: {

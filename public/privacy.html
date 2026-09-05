@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - BloatBuster: Clean Theme Code</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #111827;
+      --border: #1f2937;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #10b981;
+      --primary-light: #34d399;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px;
+    }
+    .header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--primary-light);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .last-updated {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+    h2 {
+      font-size: 20px;
+      color: #fff;
+      margin-top: 32px;
+      margin-bottom: 12px;
+    }
+    p {
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    ul {
+      margin-left: 24px;
+      margin-bottom: 16px;
+      color: var(--text-muted);
+    }
+    li { margin-bottom: 8px; }
+    .highlight-box {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 20px 0;
+    }
+    .highlight-box strong {
+      color: var(--primary-light);
+    }
+    a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="badge">BloatBuster App Policy</span>
+      <h1>Privacy Policy</h1>
+      <p class="last-updated">Last Updated: September 5, 2026</p>
+    </div>
+
+    <div class="highlight-box">
+      <strong>Zero Protected Customer Data:</strong> BloatBuster does not collect, track, share, or store any personal customer data (names, emails, phone numbers, addresses, or checkout data). The app operates strictly on theme Liquid files and storefront script detection.
+    </div>
+
+    <h2>1. Information We Collect</h2>
+    <p>BloatBuster is dedicated solely to performance optimization and theme code cleanliness. We collect minimal information strictly required to operate the service:</p>
+    <ul>
+      <li><strong>Shop Domain:</strong> The <code>.myshopify.com</code> domain to identify your store and manage your active app session.</li>
+      <li><strong>Offline Access Token:</strong> An encrypted API token provided by Shopify to scan theme Liquid templates upon your explicit request.</li>
+      <li><strong>Theme File Contents (Transient):</strong> When you run a theme code scan, theme snippets are analyzed in-memory to detect orphaned script tags. We do not store or mirror your theme code permanently on our servers.</li>
+    </ul>
+
+    <h2>2. Information We DO NOT Collect</h2>
+    <p>We do NOT collect, access, or store:</p>
+    <ul>
+      <li>Customer Personally Identifiable Information (PII)</li>
+      <li>Customer orders, transactions, or payment information</li>
+      <li>Store financial or revenue data</li>
+      <li>Customer tracking cookies or behavioral browsing data</li>
+    </ul>
+
+    <h2>3. How We Use Your Information</h2>
+    <p>We use store information exclusively to:</p>
+    <ul>
+      <li>Authenticate store owners via Shopify OAuth.</li>
+      <li>Analyze theme code and storefront HTML to detect leftover scripts from uninstalled apps.</li>
+      <li>Generate step-by-step excision instructions to safely remove code bloat.</li>
+      <li>Manage billing subscriptions via Shopify's native Billing API.</li>
+    </ul>
+
+    <h2>4. GDPR and Merchant Privacy Rights</h2>
+    <p>In full compliance with Shopify's platform requirements and global data privacy standards (GDPR, CCPA):</p>
+    <ul>
+      <li><strong>Shop Redact:</strong> When a merchant uninstalls BloatBuster, we receive Shopify's automated redaction webhook and purge any stored merchant tokens or records within 48 hours.</li>
+      <li><strong>Customer Data Requests & Redactions:</strong> Since BloatBuster never touches or stores customer records, customer data requests and redactions are acknowledged and processed immediately.</li>
+    </ul>
+
+    <h2>5. Security</h2>
+    <p>All communication with Shopify and your browser is encrypted via industry-standard TLS / HTTPS. API access tokens are stored securely in isolated environments and are never exposed to storefront visitors.</p>
+
+    <h2>6. Contact Us</h2>
+    <p>If you have any questions about this Privacy Policy or your data, please contact our support team at <a href="mailto:support@relayworks.dev">support@relayworks.dev</a>.</p>
+  </div>
+</body>
+</html>
