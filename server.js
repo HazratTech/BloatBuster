@@ -256,7 +256,11 @@ const server = http.createServer(async (req, res) => {
 
     // 1. Shopify OAuth Handlers
     if (pathname === '/auth') {
-      const shop = url.searchParams.get('shop') || 'relayworks.myshopify.com';
+      const shop = url.searchParams.get('shop');
+      if (!shop) {
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        return res.end('Missing shop parameter for authentication.');
+      }
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
       const state = url.searchParams.get('state') || '';
       const host = req.headers['x-forwarded-host'] || req.headers.host;
@@ -377,7 +381,10 @@ const server = http.createServer(async (req, res) => {
     // 2. Shopify Native Billing API: Create Recurring Subscription ($19/mo with 7-day trial)
     if (pathname === '/api/billing/subscribe' && req.method === 'POST') {
       const { shop } = await parseJsonBody(req);
-      const cleanShop = (shop || 'relayworks.myshopify.com').replace(/^https?:\/\//, '').replace(/\/$/, '');
+      if (!shop) {
+        return sendJson(res, 400, { error: 'Missing shop domain parameter for subscription.' });
+      }
+      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
       const session = getSession(cleanShop);
 
       const host = req.headers['x-forwarded-host'] || req.headers.host;
@@ -484,7 +491,11 @@ const server = http.createServer(async (req, res) => {
 
     // 3. Billing Callback / Confirmation
     if (pathname === '/api/billing/confirm') {
-      const shop = url.searchParams.get('shop') || 'relayworks.myshopify.com';
+      const shop = url.searchParams.get('shop');
+      if (!shop) {
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        return res.end('Missing shop parameter');
+      }
       const chargeId = url.searchParams.get('charge_id');
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
@@ -505,7 +516,10 @@ const server = http.createServer(async (req, res) => {
 
     // 4. Check Billing Status
     if (pathname === '/api/billing/status') {
-      const shop = url.searchParams.get('shop') || 'relayworks.myshopify.com';
+      const shop = url.searchParams.get('shop');
+      if (!shop) {
+        return sendJson(res, 200, { isPro: false, plan: 'Free Tier', hasToken: false });
+      }
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
       const session = getSession(cleanShop);
 
