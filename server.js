@@ -599,7 +599,7 @@ const server = http.createServer(async (req, res) => {
       const contentType = mimeTypes[ext] || 'application/octet-stream';
       res.writeHead(200, {
         'Content-Type': contentType,
-        'Cache-Control': 'no-cache, must-revalidate'
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
       });
       return fs.createReadStream(filePath).pipe(res);
     }
@@ -609,7 +609,7 @@ const server = http.createServer(async (req, res) => {
     if (fs.existsSync(fallbackPath)) {
       res.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-cache, must-revalidate'
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
       });
       return fs.createReadStream(fallbackPath).pipe(res);
     }
