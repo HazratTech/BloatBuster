@@ -649,7 +649,9 @@ const server = http.createServer(async (req, res) => {
         '.json': 'application/json; charset=utf-8',
         '.svg': 'image/svg+xml',
         '.png': 'image/png',
-        '.ico': 'image/x-icon'
+        '.ico': 'image/x-icon',
+        '.webm': 'video/webm',
+        '.mp4': 'video/mp4'
       };
       const contentType = mimeTypes[ext] || 'application/octet-stream';
       const headers = {
