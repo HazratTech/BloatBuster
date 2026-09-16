@@ -14,7 +14,27 @@ document.addEventListener('DOMContentLoaded', () => {
   setupScanForm();
   setupLiquidInspector();
   setupModals();
+  initTokenExchange();
 });
+
+// Background Session Token Exchange (Shopify Managed Installation)
+async function initTokenExchange() {
+  try {
+    if (window.shopify && typeof window.shopify.idToken === 'function') {
+      const token = await window.shopify.idToken();
+      const shop = getCurrentShop();
+      if (token && shop) {
+        fetch('/api/auth/token-exchange', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, shop })
+        }).catch(() => {});
+      }
+    }
+  } catch (e) {
+    // Non-blocking background sync
+  }
+}
 
 // Helper to get current clean shop domain
 function getCurrentShop() {

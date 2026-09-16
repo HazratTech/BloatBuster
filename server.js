@@ -98,6 +98,34 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
+// Helper to safely redirect to Shopify Admin (breaks out of iframe if embedded)
+function redirectShopifyAdmin(res, targetUrl, message = 'Redirecting to Shopify...') {
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>${message}</title>
+  <script>
+    if (window.top !== window.self) {
+      window.top.location.href = ${JSON.stringify(targetUrl)};
+    } else {
+      window.location.href = ${JSON.stringify(targetUrl)};
+    }
+  </script>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f6f6f7; color: #202223; margin: 0;">
+  <p>${message}</p>
+</body>
+</html>`;
+
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Content-Security-Policy': "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev;"
+  });
+  res.end(html);
+}
+
 // Persistent Session / Token Store
 const SESSIONS_FILE = path.join(__dirname, 'data', 'sessions.json');
 function getSession(shop) {
@@ -238,23 +266,7 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ success: true, topic, message: 'Acknowledged' }));
     }
 
-    // Immediate OAuth installation check: If merchant installs from App Store without an active session
-    if ((pathname === '/' || pathname === '') && url.searchParams.has('shop')) {
-      const shop = url.searchParams.get('shop');
-      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      const session = getSession(cleanShop);
-      if (!session || !session.accessToken) {
-        console.log(`[BloatBuster] Direct install/launch without session for ${cleanShop}. Redirecting to /auth.`);
-        const host = req.headers['x-forwarded-host'] || req.headers.host;
-        const proto = req.headers['x-forwarded-proto'] || 'https';
-        const redirectUri = encodeURIComponent(`${proto}://${host}/auth/callback`);
-        const authUrl = `https://${cleanShop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&redirect_uri=${redirectUri}`;
-        res.writeHead(302, { 'Location': authUrl });
-        return res.end();
-      }
-    }
-
-    // 1. Shopify OAuth Handlers
+    // 1. Shopify OAuth Handlers (Fallback for manual installs or direct links)
     if (pathname === '/auth') {
       const shop = url.searchParams.get('shop');
       if (!shop) {
@@ -268,8 +280,7 @@ const server = http.createServer(async (req, res) => {
       const redirectUri = encodeURIComponent(`${proto}://${host}/auth/callback`);
       const authUrl = `https://${cleanShop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&redirect_uri=${redirectUri}&state=${state}`;
       
-      res.writeHead(302, { 'Location': authUrl });
-      return res.end();
+      return redirectShopifyAdmin(res, authUrl, 'Redirecting to Shopify authorization...');
     }
 
     if (pathname === '/auth/callback') {
@@ -350,31 +361,67 @@ const server = http.createServer(async (req, res) => {
             const gqlData = await gqlResponse.json();
             const subResult = gqlData?.data?.appSubscriptionCreate;
             if (subResult?.confirmationUrl) {
-              res.writeHead(302, { 'Location': subResult.confirmationUrl });
-              return res.end();
+              return redirectShopifyAdmin(res, subResult.confirmationUrl, 'Redirecting to Shopify Billing...');
             }
 
             if (subResult?.userErrors?.length > 0) {
               const err = subResult.userErrors[0].message;
               console.error('[BloatBuster Billing Error in Callback]:', err);
-              res.writeHead(302, { 'Location': `https://admin.shopify.com/store/${cleanShop}/apps/${SHOPIFY_API_KEY}?billing_error=${encodeURIComponent(err)}` });
-              return res.end();
+              return redirectShopifyAdmin(res, `https://admin.shopify.com/store/${cleanShop}/apps/${SHOPIFY_API_KEY}?billing_error=${encodeURIComponent(err)}`, 'Returning to BloatBuster...');
             }
           }
         } else {
           console.error('[BloatBuster OAuth Error]:', tokenData);
           const err = tokenData.error_description || tokenData.error || 'Failed to exchange OAuth token';
-          res.writeHead(302, { 'Location': `https://admin.shopify.com/store/${cleanShop}/apps/${SHOPIFY_API_KEY}?billing_error=${encodeURIComponent(err)}` });
-          return res.end();
+          return redirectShopifyAdmin(res, `https://admin.shopify.com/store/${cleanShop}/apps/${SHOPIFY_API_KEY}?auth_error=${encodeURIComponent(err)}`, 'Returning to BloatBuster...');
         }
 
         // Default redirect back into embedded admin app
-        res.writeHead(302, { 'Location': `https://admin.shopify.com/store/${cleanShop}/apps/${SHOPIFY_API_KEY}` });
-        return res.end();
+        return redirectShopifyAdmin(res, `https://admin.shopify.com/store/${cleanShop}/apps/${SHOPIFY_API_KEY}`, 'Loading BloatBuster...');
       } catch (err) {
         console.error('OAuth token exchange error:', err);
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         return res.end('Failed to exchange Shopify OAuth token.');
+      }
+    }
+
+    // 1.5 Shopify Token Exchange (Managed Installation)
+    if (pathname === '/api/auth/token-exchange' && req.method === 'POST') {
+      const { token, shop } = await parseJsonBody(req);
+      if (!token || !shop) {
+        return sendJson(res, 400, { error: 'Missing token or shop' });
+      }
+      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      try {
+        console.log(`[BloatBuster Token Exchange] Exchanging session token for offline access token: ${cleanShop}`);
+        const exchangeRes = await fetch(`https://${cleanShop}/admin/oauth/access_token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: SHOPIFY_API_KEY,
+            client_secret: SHOPIFY_API_SECRET,
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            subject_token: token,
+            subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+            requested_token_type: 'urn:shopify:params:oauth:token-type:offline-access-token'
+          })
+        });
+        const exchangeData = await exchangeRes.json();
+        if (exchangeData.access_token) {
+          saveSession(cleanShop, {
+            accessToken: exchangeData.access_token,
+            scope: exchangeData.scope,
+            expiresAt: exchangeData.expires_in ? Date.now() + (exchangeData.expires_in * 1000) : null,
+            refreshToken: exchangeData.refresh_token || null
+          });
+          console.log(`[BloatBuster Token Exchange] Offline access token saved for ${cleanShop}`);
+          return sendJson(res, 200, { success: true });
+        } else {
+          return sendJson(res, 200, { success: false, details: exchangeData });
+        }
+      } catch (err) {
+        console.warn('[BloatBuster Token Exchange] Failed:', err.message);
+        return sendJson(res, 200, { success: false, error: err.message });
       }
     }
 
@@ -508,10 +555,7 @@ const server = http.createServer(async (req, res) => {
       });
 
       const storeName = cleanShop.replace('.myshopify.com', '');
-      res.writeHead(302, {
-        'Location': `https://admin.shopify.com/store/${storeName}/apps/${SHOPIFY_API_KEY}?plan=pro&subscribed=true`
-      });
-      return res.end();
+      return redirectShopifyAdmin(res, `https://admin.shopify.com/store/${storeName}/apps/${SHOPIFY_API_KEY}?plan=pro&subscribed=true`, 'Activating BloatBuster Pro...');
     }
 
     // 4. Check Billing Status
@@ -551,11 +595,8 @@ const server = http.createServer(async (req, res) => {
         storeUrl,
         finalUrl,
         scanDurationMs: Date.now() - startTime,
+        statusCode,
         score: scoreData.score,
-        grade: scoreData.grade,
-        badgeColor: scoreData.badgeColor,
-        headline: scoreData.headline,
-        recommendation: scoreData.recommendation,
         metrics: scoreData.metrics,
         summary: scanResults.summary,
         detectedApps: scanResults.detectedApps,
@@ -611,10 +652,14 @@ const server = http.createServer(async (req, res) => {
         '.ico': 'image/x-icon'
       };
       const contentType = mimeTypes[ext] || 'application/octet-stream';
-      res.writeHead(200, {
+      const headers = {
         'Content-Type': contentType,
         'Cache-Control': 'no-cache, no-store, must-revalidate'
-      });
+      };
+      if (ext === '.html') {
+        headers['Content-Security-Policy'] = "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev;";
+      }
+      res.writeHead(200, headers);
       return fs.createReadStream(filePath).pipe(res);
     }
 
@@ -623,7 +668,8 @@ const server = http.createServer(async (req, res) => {
     if (fs.existsSync(fallbackPath)) {
       res.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Content-Security-Policy': "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev;"
       });
       return fs.createReadStream(fallbackPath).pipe(res);
     }
