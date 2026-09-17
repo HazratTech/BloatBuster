@@ -276,8 +276,8 @@ async function getOrExchangeAccessToken(shop, sessionToken = null) {
   const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
   let accessToken = await getValidAccessToken(cleanShop);
 
-  if ((!accessToken || accessToken.startsWith('shpat_')) && sessionToken) {
-    console.log(`[BloatBuster Auth] Active token for ${cleanShop} is missing or legacy. Exchanging provided session token...`);
+  if (!accessToken && sessionToken) {
+    console.log(`[BloatBuster Auth] Active token for ${cleanShop} is missing or expired. Exchanging provided session token...`);
     const newToken = await exchangeSessionToken(cleanShop, sessionToken);
     if (newToken) {
       accessToken = newToken;
