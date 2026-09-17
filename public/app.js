@@ -44,21 +44,24 @@ async function initTokenExchange() {
   return null;
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  initShopifyAppBridge();
-  initStoreDetection();
-  initTabs();
-  initBilling();
-  loadSignatures();
-  setupScanForm();
-  setupThemeAudit();
-  setupLiquidInspector();
-  setupModals();
-  setupBackupButton();
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Initialize DOM, inputs, tabs, and all button click handlers immediately & synchronously
+  try { initShopContext(); } catch (e) { console.error('[BloatBuster] initShopContext error:', e); }
+  try { initTabs(); } catch (e) { console.error('[BloatBuster] initTabs error:', e); }
+  try { initBilling(); } catch (e) { console.error('[BloatBuster] initBilling error:', e); }
+  try { loadSignatures(); } catch (e) { console.error('[BloatBuster] loadSignatures error:', e); }
+  try { setupScanForm(); } catch (e) { console.error('[BloatBuster] setupScanForm error:', e); }
+  try { setupThemeAudit(); } catch (e) { console.error('[BloatBuster] setupThemeAudit error:', e); }
+  try { setupLiquidInspector(); } catch (e) { console.error('[BloatBuster] setupLiquidInspector error:', e); }
+  try { setupModals(); } catch (e) { console.error('[BloatBuster] setupModals error:', e); }
+  try { setupBackupButton(); } catch (e) { console.error('[BloatBuster] setupBackupButton error:', e); }
 
-  // Exchange modern expiring token first, then fetch live active theme
-  await initTokenExchange();
-  initActiveTheme();
+  // 2. Perform background token exchange and dynamic theme detection (non-blocking)
+  initTokenExchange()
+    .catch(err => console.warn('[BloatBuster] Token exchange warning:', err))
+    .finally(() => {
+      initActiveTheme();
+    });
 });
 
 // Helper to get current clean shop domain
@@ -91,13 +94,26 @@ function getCurrentShop() {
     } catch (e) {}
   }
 
+  // Fallback to sessionStorage if previously detected
+  if (!shop) {
+    try {
+      shop = sessionStorage.getItem('bloatbuster_shop');
+    } catch (e) {}
+  }
+
   // Fallback to storeUrlInput value if user typed it
   if (!shop) {
     const storeInput = document.getElementById('storeUrlInput');
     shop = storeInput?.value || '';
   }
 
-  return (shop || '').replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+  const clean = (shop || '').replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+  if (clean && clean.includes('.')) {
+    try {
+      sessionStorage.setItem('bloatbuster_shop', clean);
+    } catch (e) {}
+  }
+  return clean;
 }
 
 // 1. Detect Shop Context and setup domain header
@@ -107,8 +123,12 @@ function initShopContext() {
   const domainHeader = document.getElementById('storeDomainHeader');
 
   if (shop) {
-    if (storeInput && !storeInput.value) storeInput.value = `https://${shop}/`;
-    if (domainHeader) domainHeader.textContent = shop;
+    if (storeInput && (!storeInput.value || storeInput.value === 'https:///')) {
+      storeInput.value = `https://${shop}/`;
+    }
+    if (domainHeader) {
+      domainHeader.textContent = shop;
+    }
   }
 
   if (storeInput && domainHeader) {
