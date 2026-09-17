@@ -9,7 +9,7 @@
     "server": "node --watch server.js",
     "dev": "npx @shopify/cli app dev",
     "deploy": "npx @shopify/cli app deploy",
-    "test": "node test/scanner.test.js"
+    "test": "node test/scanner.test.js && node test/modal.test.js"
   },
   "keywords": [
     "shopify",
