@@ -416,6 +416,32 @@
     </div>
   </div>
 
-  <script src="/app.js?v=2.1.0"></script>
+  <!-- Polaris Production Feedback & Confirmation Modal -->
+  <div id="polarisFeedbackModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+    <div class="modal-dialog feedback-dialog">
+      <div class="feedback-header">
+        <div id="feedbackModalIcon" class="feedback-icon-badge type-info">
+          <!-- Dynamically populated icon -->
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
+            <h3 class="feedback-title" id="feedbackModalTitle">Notification</h3>
+            <button type="button" class="feedback-close-btn" id="feedbackModalClose" aria-label="Close dialog">&times;</button>
+          </div>
+          <div class="feedback-message" id="feedbackModalMessage"></div>
+        </div>
+      </div>
+      <div id="feedbackModalDetails" class="feedback-details-container" style="display: none;"></div>
+      <div class="modal-foot">
+        <button type="button" id="feedbackModalCancelBtn" class="btn-secondary" style="display: none;">Cancel</button>
+        <button type="button" id="feedbackModalConfirmBtn" class="btn-primary">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Polaris Floating Toast Notification Container -->
+  <div id="polarisToastContainer" class="polaris-toast-container" aria-live="polite"></div>
+
+  <script src="/app.js?v=2.2.0"></script>
 </body>
 </html>

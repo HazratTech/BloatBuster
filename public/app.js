@@ -194,7 +194,15 @@ async function initBilling() {
 
   const billingError = params.get('billing_error');
   if (billingError) {
-    alert(`Shopify Billing Notice:\n\n${billingError}\n\nNote: If this mentions "owned by a Shop", go to your Shopify Partner Dashboard -> Apps -> BloatBuster -> Distribution -> select "Public distribution".`);
+    showAlert({
+      title: 'Shopify Billing Notice',
+      message: billingError,
+      type: 'warning',
+      details: {
+        'Resolution Guide': 'If this mentions "owned by a Shop", go to your Shopify Partner Dashboard -> Apps -> BloatBuster -> Distribution -> select "Public distribution".'
+      },
+      confirmText: 'Understood'
+    });
   }
 
   function setProUiActive() {
@@ -247,7 +255,15 @@ async function initBilling() {
             window.open(data.confirmationUrl, '_blank');
             startTrialBtn.disabled = false;
             startTrialBtn.textContent = 'Approve App in Tab, Then Click Again';
-            alert('A new tab has opened to grant permissions for your Shopify Partner App. Click "Install app" in that tab, then return here and click Start Trial!');
+            showAlert({
+              title: 'App Authorization Required',
+              message: 'A new window has opened to authorize BloatBuster on your test store.',
+              type: 'info',
+              details: {
+                'Next Steps': '1. Click "Install app" in the opened tab.\n2. Return here and click "Start 7-Day Free Trial" to activate.'
+              },
+              confirmText: 'Ready'
+            });
             return;
           }
 
@@ -263,12 +279,25 @@ async function initBilling() {
         } else if (data.error) {
           startTrialBtn.disabled = false;
           startTrialBtn.textContent = 'Start 7-Day Free Trial';
-          alert(`Shopify Partner Notice:\n\n${data.error}\n\nTo enable billing, ensure this app is configured with Public Distribution in your Shopify Partner Dashboard (partners.shopify.com).`);
+          showAlert({
+            title: 'Shopify Partner Billing Requirement',
+            message: data.error,
+            type: 'warning',
+            details: {
+              'Partner Configuration': 'To enable recurring subscriptions, ensure this app is configured with Public Distribution in your Shopify Partner Dashboard (partners.shopify.com).'
+            },
+            confirmText: 'Understood'
+          });
         }
       } catch (err) {
         startTrialBtn.disabled = false;
         startTrialBtn.textContent = 'Start 7-Day Free Trial';
-        alert(`Failed to start subscription: ${err.message}`);
+        showAlert({
+          title: 'Subscription Initialization Failed',
+          message: `Failed to initiate subscription: ${err.message}`,
+          type: 'error',
+          confirmText: 'Dismiss'
+        });
       }
     });
   }
@@ -309,12 +338,27 @@ function setupBackupButton() {
           badge.textContent = `Backup: ${data.backupTheme.name.slice(0, 26)}...`;
           badge.className = 'badge badge-success';
         }
-        alert(`Theme Safety Backup Created Successfully!\n\nBackup Name: ${data.backupTheme.name}\nID: ${data.backupTheme.id}\n\nYou can restore this backup at any time from Online Store -> Themes.`);
+        showAlert({
+          title: 'Theme Safety Backup Created',
+          message: 'A complete duplicate of your live theme has been secured in your Shopify Admin before any modifications take place.',
+          type: 'success',
+          details: {
+            'Backup Theme': data.backupTheme.name,
+            'Theme ID': String(data.backupTheme.id),
+            'Restore Path': 'Shopify Admin -> Online Store -> Themes'
+          },
+          confirmText: 'Awesome!'
+        });
       } else {
         throw new Error(data.error || 'Failed to create backup.');
       }
     } catch (err) {
-      alert(`Backup Error: ${err.message}`);
+      showAlert({
+        title: 'Theme Backup Error',
+        message: err.message || 'Failed to create theme backup.',
+        type: 'error',
+        confirmText: 'Dismiss'
+      });
     } finally {
       btn.disabled = false;
       btn.innerHTML = `
@@ -339,7 +383,12 @@ function setupThemeAudit() {
   runBtn.addEventListener('click', async () => {
     const cleanShop = getCurrentShop();
     if (!cleanShop) {
-      alert('Please open BloatBuster from within your Shopify Admin to inspect theme assets.');
+      showAlert({
+        title: 'Shopify Admin Context Required',
+        message: 'Please open BloatBuster from within your Shopify Admin to inspect theme assets.',
+        type: 'warning',
+        confirmText: 'Got It'
+      });
       return;
     }
 
@@ -370,7 +419,12 @@ function setupThemeAudit() {
       currentThemeAuditData = data;
       renderThemeAuditReport(data);
     } catch (err) {
-      alert(`Theme Asset Audit Error:\n\n${err.message}`);
+      showAlert({
+        title: 'Theme Asset Audit Error',
+        message: err.message || 'Failed to complete theme scan.',
+        type: 'error',
+        confirmText: 'Dismiss'
+      });
     } finally {
       spinner.style.display = 'none';
       runBtn.disabled = false;
@@ -508,9 +562,19 @@ window.executeSafeDeactivate = async function(appName, codeSnippet, btnElement) 
     return;
   }
 
-  const confirmed = confirm(
-    `BloatBuster Safe Deactivation:\n\nSafely deactivate "${codeSnippet}" in layout/theme.liquid?\n\nA timestamped safety backup of your theme will be created automatically before modifying the file.`
-  );
+  const confirmed = await showConfirm({
+    title: `Deactivate ${appName} Reference?`,
+    message: `Safely wrap this dead code reference in a comment tag so it no longer executes on your live storefront?`,
+    type: 'warning',
+    details: {
+      'Target Snippet': codeSnippet,
+      'Theme File': 'layout/theme.liquid',
+      'Safety Guarantee': 'A timestamped safety backup of your theme will be created automatically before modifying the file.'
+    },
+    confirmText: 'Safely Deactivate',
+    cancelText: 'Keep Snippet',
+    isDestructive: true
+  });
   if (!confirmed) return;
 
   btnElement.disabled = true;
@@ -538,14 +602,28 @@ window.executeSafeDeactivate = async function(appName, codeSnippet, btnElement) 
       btnElement.className = 'btn-secondary';
       btnElement.style.color = '#008060';
       btnElement.style.fontWeight = '600';
-      alert(`Success!\n\n${data.message}\n\nThe reference was safely wrapped in a BloatBuster comment tag so it no longer executes.`);
+      showAlert({
+        title: 'Reference Safely Deactivated',
+        message: data.message || 'The dead code reference was safely deactivated.',
+        type: 'success',
+        details: {
+          'Protection Applied': 'Wrapped in BloatBuster comment tags so browser execution is eliminated without breaking theme layout.',
+          'Reversible': 'You can undo this at any time or restore from your automated theme backup.'
+        },
+        confirmText: 'Great!'
+      });
     } else {
       throw new Error(data.error || 'Failed to deactivate snippet.');
     }
   } catch (err) {
     btnElement.disabled = false;
     btnElement.textContent = 'Safely Deactivate';
-    alert(`Deactivation Error: ${err.message}`);
+    showAlert({
+      title: 'Deactivation Error',
+      message: err.message,
+      type: 'error',
+      confirmText: 'Dismiss'
+    });
   }
 };
 
@@ -718,7 +796,12 @@ async function executeScan(storeUrl) {
     activeAppOverrides.clear();
     renderReport(result);
   } catch (err) {
-    alert(`Storefront Scan Error: ${err.message}`);
+    showAlert({
+      title: 'Storefront Scan Error',
+      message: err.message || 'Could not complete storefront scan.',
+      type: 'error',
+      confirmText: 'Dismiss'
+    });
   } finally {
     scanningState.style.display = 'none';
     submitBtn.disabled = false;
@@ -898,7 +981,7 @@ function setupLiquidInspector() {
   scanBtn.addEventListener('click', async () => {
     const liquidCode = input.value.trim();
     if (!liquidCode) {
-      alert('Please paste liquid code from your theme file.');
+      showToast('Please paste liquid code from your theme file to analyze.', 'warning');
       return;
     }
 
@@ -938,7 +1021,7 @@ function setupLiquidInspector() {
               </div>
             </div>
             <div class="row-actions">
-              <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="alert('Line ${f.line}: ${escapeHtml(f.cleanupAdvice)}')">
+              <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="showAdviceModal('${escapeHtml(f.appName)}', '${f.line}', '${escapeHtml(f.cleanupAdvice)}')">
                 Advice
               </button>
             </div>
@@ -946,13 +1029,227 @@ function setupLiquidInspector() {
         `).join('');
       }
     } catch (err) {
-      alert(`Liquid Inspector Error: ${err.message}`);
+      showAlert({
+        title: 'Liquid Inspector Error',
+        message: err.message,
+        type: 'error',
+        confirmText: 'Dismiss'
+      });
     } finally {
       scanBtn.disabled = false;
       scanBtn.textContent = 'Analyze Raw Liquid Block';
     }
   });
 }
+
+// --- Production-Grade Polaris Feedback Modals & Toasts ---
+
+const MODAL_ICONS = {
+  success: `<svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
+    <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd"/>
+  </svg>`,
+  error: `<svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
+    <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd"/>
+  </svg>`,
+  critical: `<svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
+    <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd"/>
+  </svg>`,
+  warning: `<svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
+    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/>
+  </svg>`,
+  info: `<svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
+    <path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .247.25v3.5a.25.25 0 0 1-.247.25H9a.75.75 0 0 0 0 1.5h2a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.247-.25v-4.25A.75.75 0 0 0 9.75 9H9Z" clip-rule="evenodd"/>
+  </svg>`
+};
+
+let activeFeedbackResolve = null;
+
+function closeFeedbackModal(val) {
+  const modal = document.getElementById('polarisFeedbackModal');
+  if (modal) modal.style.display = 'none';
+  if (typeof activeFeedbackResolve === 'function') {
+    activeFeedbackResolve(val);
+    activeFeedbackResolve = null;
+  }
+}
+
+/**
+ * Copies text to clipboard and briefly indicates copied status
+ */
+window.copyFeedbackText = function(text, btn) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copied ✓';
+      btn.style.borderColor = '#008060';
+      btn.style.color = '#008060';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.borderColor = '';
+        btn.style.color = '';
+      }, 1800);
+    }).catch(() => {});
+  }
+};
+
+/**
+ * Render structured key-value rows or HTML inside feedback modal
+ */
+function renderFeedbackDetails(details) {
+  const container = document.getElementById('feedbackModalDetails');
+  if (!container) return;
+
+  if (!details) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'block';
+
+  if (typeof details === 'string') {
+    container.innerHTML = `<div class="feedback-details-box">${details}</div>`;
+    return;
+  }
+
+  if (typeof details === 'object') {
+    const rows = Object.entries(details).map(([key, val]) => {
+      const isCopyable = typeof val === 'string' && (val.startsWith('backup-') || key.toLowerCase().includes('id'));
+      const valHtml = isCopyable
+        ? `<span>${escapeHtml(val)}</span> <button type="button" class="copy-chip-btn" onclick="copyFeedbackText('${escapeHtml(val)}', this)">Copy</button>`
+        : `<span>${escapeHtml(String(val))}</span>`;
+
+      return `
+        <div class="feedback-detail-row">
+          <span class="feedback-detail-label">${escapeHtml(key)}:</span>
+          <div class="feedback-detail-value">${valHtml}</div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `<div class="feedback-details-box">${rows}</div>`;
+  }
+}
+
+window.showAlert = function({
+  title = 'Notice',
+  message = '',
+  type = 'info',
+  details = null,
+  confirmText = 'Got it',
+  confirmVariant = 'primary'
+}) {
+  return new Promise((resolve) => {
+    activeFeedbackResolve = resolve;
+
+    const modal = document.getElementById('polarisFeedbackModal');
+    const iconEl = document.getElementById('feedbackModalIcon');
+    const titleEl = document.getElementById('feedbackModalTitle');
+    const msgEl = document.getElementById('feedbackModalMessage');
+    const cancelBtn = document.getElementById('feedbackModalCancelBtn');
+    const confirmBtn = document.getElementById('feedbackModalConfirmBtn');
+
+    if (!modal) return resolve();
+
+    const safeType = MODAL_ICONS[type] ? type : 'info';
+    iconEl.className = `feedback-icon-badge type-${safeType}`;
+    iconEl.innerHTML = MODAL_ICONS[safeType];
+
+    titleEl.textContent = title;
+    msgEl.innerHTML = escapeHtml(message).replace(/\n/g, '<br>');
+    renderFeedbackDetails(details);
+
+    cancelBtn.style.display = 'none';
+    confirmBtn.className = confirmVariant === 'critical' ? 'btn-critical' : 'btn-primary';
+    confirmBtn.textContent = confirmText;
+    confirmBtn.onclick = () => closeFeedbackModal(true);
+
+    modal.style.display = 'flex';
+  });
+};
+
+window.showConfirm = function({
+  title = 'Please Confirm',
+  message = '',
+  type = 'warning',
+  details = null,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  isDestructive = false
+}) {
+  return new Promise((resolve) => {
+    activeFeedbackResolve = resolve;
+
+    const modal = document.getElementById('polarisFeedbackModal');
+    const iconEl = document.getElementById('feedbackModalIcon');
+    const titleEl = document.getElementById('feedbackModalTitle');
+    const msgEl = document.getElementById('feedbackModalMessage');
+    const cancelBtn = document.getElementById('feedbackModalCancelBtn');
+    const confirmBtn = document.getElementById('feedbackModalConfirmBtn');
+
+    if (!modal) return resolve(false);
+
+    const safeType = MODAL_ICONS[type] ? type : 'warning';
+    iconEl.className = `feedback-icon-badge type-${safeType}`;
+    iconEl.innerHTML = MODAL_ICONS[safeType];
+
+    titleEl.textContent = title;
+    msgEl.innerHTML = escapeHtml(message).replace(/\n/g, '<br>');
+    renderFeedbackDetails(details);
+
+    cancelBtn.style.display = 'inline-flex';
+    cancelBtn.textContent = cancelText;
+    cancelBtn.onclick = () => closeFeedbackModal(false);
+
+    confirmBtn.className = isDestructive ? 'btn-critical' : 'btn-primary';
+    confirmBtn.textContent = confirmText;
+    confirmBtn.onclick = () => closeFeedbackModal(true);
+
+    modal.style.display = 'flex';
+  });
+};
+
+window.showToast = function(message, type = 'success', duration = 3500) {
+  const container = document.getElementById('polarisToastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'polaris-toast';
+
+  const iconSvg = type === 'success' 
+    ? `<svg width="14" height="14" viewBox="0 0 20 20" fill="#20BF6B"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd"/></svg>`
+    : type === 'warning'
+    ? `<svg width="14" height="14" viewBox="0 0 20 20" fill="#FFC93E"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>`
+    : `<svg width="14" height="14" viewBox="0 0 20 20" fill="#FF6B6B"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd"/></svg>`;
+
+  toast.innerHTML = `
+    <span class="toast-icon">${iconSvg}</span>
+    <span>${escapeHtml(message)}</span>
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('toast-hiding');
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 250);
+  }, duration);
+};
+
+window.showAdviceModal = function(appName, line, advice) {
+  showAlert({
+    title: `Cleanup Protocol • ${appName}`,
+    message: `Remediation steps for Line ${line}:`,
+    type: 'info',
+    details: {
+      'App Name': appName,
+      'Theme File': `Line ${line}`,
+      'Recommendation': advice
+    },
+    confirmText: 'Got It'
+  });
+};
 
 // 12. Modals setup
 function setupModals() {
@@ -981,9 +1278,31 @@ function setupModals() {
     closeProModal.addEventListener('click', () => proModal.style.display = 'none');
   }
 
+  // Feedback Modal Controls
+  const feedbackModal = document.getElementById('polarisFeedbackModal');
+  const closeFeedbackModalBtn = document.getElementById('feedbackModalClose');
+  if (closeFeedbackModalBtn) {
+    closeFeedbackModalBtn.addEventListener('click', () => closeFeedbackModal(false));
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (feedbackModal && feedbackModal.style.display === 'flex') {
+        closeFeedbackModal(false);
+      }
+      if (excisionModal && excisionModal.style.display === 'flex') {
+        excisionModal.style.display = 'none';
+      }
+      if (proModal && proModal.style.display === 'flex') {
+        proModal.style.display = 'none';
+      }
+    }
+  });
+
   window.addEventListener('click', (e) => {
     if (e.target === excisionModal) excisionModal.style.display = 'none';
     if (e.target === proModal) proModal.style.display = 'none';
+    if (e.target === feedbackModal) closeFeedbackModal(false);
   });
 }
 
