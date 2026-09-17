@@ -40,6 +40,8 @@ jobs:
             --network custom_bridge \
             --ip 172.25.0.50 \
             --env-file /home/envs/bloatbuster.env \
+            -e SESSIONS_FILE=/app/sessions/sessions.json \
+            -v /home/data/bloatbuster:/app/sessions \
             -p 8084:3000 \
             --restart unless-stopped \
             ${{ secrets.DOCKERHUB_USERNAME }}/bloatbuster:latest

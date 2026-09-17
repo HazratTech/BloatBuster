@@ -128,7 +128,7 @@ function redirectShopifyAdmin(res, targetUrl, message = 'Redirecting to Shopify.
 }
 
 // Persistent Session / Token Store
-const SESSIONS_FILE = path.join(__dirname, 'data', 'sessions.json');
+const SESSIONS_FILE = process.env.SESSIONS_FILE || path.join(__dirname, 'data', 'sessions.json');
 function getSession(shop) {
   try {
     if (fs.existsSync(SESSIONS_FILE)) {
