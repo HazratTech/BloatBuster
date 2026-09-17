@@ -1165,7 +1165,7 @@
       "snippetPatterns": [
         "socialshopwave-widget-auth.liquid",
         "ssw-helpers.liquid",
-        "snippets/ssw"
+        "snippets/ssw-"
       ],
       "liquidPatterns": [
         "render\\s+['\"]socialshopwave",
