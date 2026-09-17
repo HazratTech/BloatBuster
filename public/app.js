@@ -10,38 +10,56 @@ let activeAppOverrides = new Set();
 let isProUser = false;
 let currentShopTheme = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-  initShopContext();
+// Helper to retrieve App Bridge session token (JWT ID token)
+async function getSessionToken() {
+  try {
+    if (window.shopify && typeof window.shopify.idToken === 'function') {
+      const idToken = await window.shopify.idToken();
+      if (idToken) return idToken;
+    }
+  } catch (e) {
+    console.warn('[BloatBuster] Could not retrieve App Bridge idToken:', e);
+  }
+  return null;
+}
+
+// Background Session Token Exchange (Shopify Managed Installation)
+async function initTokenExchange() {
+  try {
+    const token = await getSessionToken();
+    const shop = getCurrentShop();
+    if (token && shop) {
+      const res = await fetch('/api/auth/token-exchange', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, shop })
+      });
+      const data = await res.json();
+      console.log('[BloatBuster App Bridge] Token exchange status:', data);
+      return data;
+    }
+  } catch (e) {
+    console.warn('[BloatBuster App Bridge] Token exchange error:', e);
+  }
+  return null;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  initShopifyAppBridge();
+  initStoreDetection();
   initTabs();
   initBilling();
-  initActiveTheme();
   loadSignatures();
   setupScanForm();
   setupThemeAudit();
   setupLiquidInspector();
   setupModals();
   setupBackupButton();
-  initTokenExchange();
-});
 
-// Background Session Token Exchange (Shopify Managed Installation)
-async function initTokenExchange() {
-  try {
-    if (window.shopify && typeof window.shopify.idToken === 'function') {
-      const token = await window.shopify.idToken();
-      const shop = getCurrentShop();
-      if (token && shop) {
-        fetch('/api/auth/token-exchange', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, shop })
-        }).catch(() => {});
-      }
-    }
-  } catch (e) {
-    // Non-blocking background sync
-  }
-}
+  // Exchange modern expiring token first, then fetch live active theme
+  await initTokenExchange();
+  initActiveTheme();
+});
 
 // Helper to get current clean shop domain
 function getCurrentShop() {
@@ -110,7 +128,12 @@ async function initActiveTheme() {
   if (!cleanShop || !themeDisplay) return;
 
   try {
-    const res = await fetch(`/api/theme/live?shop=${encodeURIComponent(cleanShop)}`);
+    const sessionToken = await getSessionToken();
+    const headers = {};
+    if (sessionToken) {
+      headers['Authorization'] = `Bearer ${sessionToken}`;
+    }
+    const res = await fetch(`/api/theme/live?shop=${encodeURIComponent(cleanShop)}`, { headers });
     const data = await res.json();
     if (data.success && data.theme) {
       currentShopTheme = data.theme;
@@ -250,10 +273,14 @@ function setupBackupButton() {
     btn.innerHTML = `<span class="polaris-spinner" style="width: 12px; height: 12px; margin-right: 6px; display: inline-block; vertical-align: middle;"></span> Creating...`;
 
     try {
+      const sessionToken = await getSessionToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessionToken) headers['Authorization'] = `Bearer ${sessionToken}`;
+
       const res = await fetch('/api/theme/duplicate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shop: cleanShop })
+        headers,
+        body: JSON.stringify({ shop: cleanShop, sessionToken })
       });
       const data = await res.json();
 
@@ -305,10 +332,14 @@ function setupThemeAudit() {
     setTimeout(() => { statusMsg.textContent = 'Cross-referencing 52 app signatures against theme files...'; }, 1200);
 
     try {
+      const sessionToken = await getSessionToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessionToken) headers['Authorization'] = `Bearer ${sessionToken}`;
+
       const res = await fetch('/api/theme/scan-assets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shop: cleanShop })
+        headers,
+        body: JSON.stringify({ shop: cleanShop, sessionToken })
       });
       const data = await res.json();
 
@@ -466,11 +497,16 @@ window.executeSafeDeactivate = async function(appName, codeSnippet, btnElement) 
   btnElement.innerHTML = `<span class="polaris-spinner" style="width: 12px; height: 12px; margin-right: 6px; display: inline-block; vertical-align: middle;"></span> Deactivating...`;
 
   try {
+    const sessionToken = await getSessionToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (sessionToken) headers['Authorization'] = `Bearer ${sessionToken}`;
+
     const res = await fetch('/api/theme/clean-snippet', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         shop: cleanShop,
+        sessionToken,
         targetLine: codeSnippet,
         appName
       })
@@ -639,12 +675,17 @@ async function executeScan(storeUrl) {
   setTimeout(() => { statusMsg.textContent = 'Comparing DOM against 52 verified app signatures...'; }, 1100);
 
   try {
+    const sessionToken = await getSessionToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (sessionToken) headers['Authorization'] = `Bearer ${sessionToken}`;
+
     const res = await fetch('/api/scan', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         storeUrl,
         shop: cleanDomain || getCurrentShop(),
+        sessionToken,
         activeApps: Array.from(activeAppOverrides)
       })
     });

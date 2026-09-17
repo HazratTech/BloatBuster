@@ -173,9 +173,70 @@ function removeSession(shop) {
   }
 }
 
+// Helper to extract App Bridge Session Token (JWT) from Authorization header or body
+function extractSessionToken(req, body = null) {
+  if (body && body.sessionToken) return body.sessionToken;
+  const authHeader = req.headers['authorization'];
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7).trim();
+  }
+  return null;
+}
+
+// Exchange App Bridge Session Token for a modern expiring offline access token (with expiring: 1)
+async function exchangeSessionToken(shop, idToken) {
+  try {
+    const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    console.log(`[BloatBuster Token Exchange] Exchanging session token for modern expiring offline access token: ${cleanShop}`);
+    const exchangeRes = await fetch(`https://${cleanShop}/admin/oauth/access_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: SHOPIFY_API_KEY,
+        client_secret: SHOPIFY_API_SECRET,
+        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+        subject_token: idToken,
+        subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+        requested_token_type: 'urn:shopify:params:oauth:token-type:offline-access-token',
+        expiring: 1
+      })
+    });
+
+    const exchangeData = await exchangeRes.json();
+    console.log('[BloatBuster Token Exchange Response]:', JSON.stringify({
+      ...exchangeData,
+      access_token: exchangeData.access_token ? '[REDACTED]' : null,
+      refresh_token: exchangeData.refresh_token ? '[REDACTED]' : null
+    }));
+
+    if (exchangeData.access_token) {
+      saveSession(cleanShop, {
+        accessToken: exchangeData.access_token,
+        scope: exchangeData.scope,
+        expiresAt: exchangeData.expires_in ? Date.now() + (exchangeData.expires_in * 1000) : null,
+        refreshToken: exchangeData.refresh_token || null
+      });
+      console.log(`[BloatBuster Token Exchange] Offline access token saved for ${cleanShop} (expires in ${exchangeData.expires_in || 3600}s)`);
+      return exchangeData.access_token;
+    } else {
+      console.warn('[BloatBuster Token Exchange] Shopify rejected token exchange:', exchangeData);
+      return null;
+    }
+  } catch (err) {
+    console.error('[BloatBuster Token Exchange Error]:', err.message);
+    return null;
+  }
+}
+
 async function getValidAccessToken(shop) {
   const session = getSession(shop);
   if (!session || !session.accessToken) return null;
+
+  // Reject legacy non-expiring tokens as Shopify 2026 Admin API enforces expiring tokens
+  if (session.accessToken.startsWith('shpat_') && !session.refreshToken) {
+    console.warn(`[BloatBuster Auth] Stored token for ${shop} is a legacy non-expiring token (shpat_). Needs modern expiring token.`);
+    return null;
+  }
 
   // Refresh expiring token if within 5 minutes of expiration
   if (session.expiresAt && Date.now() > session.expiresAt - 300000 && session.refreshToken) {
@@ -199,6 +260,8 @@ async function getValidAccessToken(shop) {
           refreshToken: refreshData.refresh_token || session.refreshToken
         });
         return refreshData.access_token;
+      } else {
+        console.warn('[BloatBuster Auth] Token refresh returned error:', refreshData);
       }
     } catch (err) {
       console.warn('Token auto-refresh failed:', err.message);
@@ -206,6 +269,22 @@ async function getValidAccessToken(shop) {
   }
 
   return session.accessToken;
+}
+
+// Get valid access token or automatically exchange provided session token
+async function getOrExchangeAccessToken(shop, sessionToken = null) {
+  const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  let accessToken = await getValidAccessToken(cleanShop);
+
+  if ((!accessToken || accessToken.startsWith('shpat_')) && sessionToken) {
+    console.log(`[BloatBuster Auth] Active token for ${cleanShop} is missing or legacy. Exchanging provided session token...`);
+    const newToken = await exchangeSessionToken(cleanShop, sessionToken);
+    if (newToken) {
+      accessToken = newToken;
+    }
+  }
+
+  return accessToken;
 }
 
 // Shopify Admin Theme API Helpers
@@ -217,13 +296,17 @@ async function fetchActiveTheme(shop, accessToken) {
         'X-Shopify-Access-Token': accessToken
       }
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.warn(`[Shopify Theme API] fetchActiveTheme HTTP ${res.status} for ${shop}: ${errBody}`);
+      return { error: `HTTP ${res.status}: ${errBody}`, status: res.status };
+    }
     const data = await res.json();
     const mainTheme = data?.themes?.find(t => t.role === 'main');
     return mainTheme || data?.themes?.[0] || null;
   } catch (err) {
     console.warn(`[Shopify Theme API] fetchActiveTheme failed for ${shop}:`, err.message);
-    return null;
+    return { error: err.message, status: 500 };
   }
 }
 
@@ -238,7 +321,11 @@ async function fetchThemeAsset(shop, accessToken, themeId, assetKey) {
         }
       }
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.warn(`[Shopify Theme API] fetchThemeAsset (${assetKey}) failed HTTP ${res.status}:`, errBody);
+      return null;
+    }
     const data = await res.json();
     return data?.asset?.value || null;
   } catch (err) {
@@ -255,7 +342,11 @@ async function fetchThemeAssetList(shop, accessToken, themeId) {
         'X-Shopify-Access-Token': accessToken
       }
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.warn(`[Shopify Theme API] fetchThemeAssetList failed HTTP ${res.status}:`, errBody);
+      return [];
+    }
     const data = await res.json();
     return (data?.assets || []).map(a => a.key);
   } catch (err) {
@@ -529,36 +620,11 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 400, { error: 'Missing token or shop' });
       }
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      try {
-        console.log(`[BloatBuster Token Exchange] Exchanging session token for offline access token: ${cleanShop}`);
-        const exchangeRes = await fetch(`https://${cleanShop}/admin/oauth/access_token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client_id: SHOPIFY_API_KEY,
-            client_secret: SHOPIFY_API_SECRET,
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            subject_token: token,
-            subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-            requested_token_type: 'urn:shopify:params:oauth:token-type:offline-access-token'
-          })
-        });
-        const exchangeData = await exchangeRes.json();
-        if (exchangeData.access_token) {
-          saveSession(cleanShop, {
-            accessToken: exchangeData.access_token,
-            scope: exchangeData.scope,
-            expiresAt: exchangeData.expires_in ? Date.now() + (exchangeData.expires_in * 1000) : null,
-            refreshToken: exchangeData.refresh_token || null
-          });
-          console.log(`[BloatBuster Token Exchange] Offline access token saved for ${cleanShop}`);
-          return sendJson(res, 200, { success: true });
-        } else {
-          return sendJson(res, 200, { success: false, details: exchangeData });
-        }
-      } catch (err) {
-        console.warn('[BloatBuster Token Exchange] Failed:', err.message);
-        return sendJson(res, 200, { success: false, error: err.message });
+      const accessToken = await exchangeSessionToken(cleanShop, token);
+      if (accessToken) {
+        return sendJson(res, 200, { success: true });
+      } else {
+        return sendJson(res, 400, { success: false, error: 'Failed to exchange App Bridge session token with Shopify.' });
       }
     }
 
@@ -713,7 +779,8 @@ const server = http.createServer(async (req, res) => {
 
     // API: Scan Live Storefront URL (with automatic active embed detection)
     if (pathname === '/api/scan' && req.method === 'POST') {
-      const { storeUrl, shop: rawShop, activeApps = [] } = await parseJsonBody(req);
+      const body = await parseJsonBody(req);
+      const { storeUrl, shop: rawShop, activeApps = [] } = body;
       if (!storeUrl) {
         return sendJson(res, 400, { error: 'Please provide a Shopify store URL to scan.' });
       }
@@ -725,7 +792,8 @@ const server = http.createServer(async (req, res) => {
       let autoActiveAppIds = [];
       const cleanShop = rawShop ? rawShop.replace(/^https?:\/\//, '').split('/')[0] : null;
       if (cleanShop) {
-        const accessToken = await getValidAccessToken(cleanShop);
+        const sessionToken = extractSessionToken(req, body);
+        const accessToken = await getOrExchangeAccessToken(cleanShop, sessionToken);
         if (accessToken) {
           try {
             const activeTheme = await fetchActiveTheme(cleanShop, accessToken);
@@ -774,7 +842,8 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 400, { error: 'Missing shop parameter.' });
       }
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      const accessToken = await getValidAccessToken(cleanShop);
+      const sessionToken = extractSessionToken(req);
+      let accessToken = await getOrExchangeAccessToken(cleanShop, sessionToken);
 
       if (!accessToken) {
         return sendJson(res, 200, {
@@ -784,15 +853,26 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      const activeTheme = await fetchActiveTheme(cleanShop, accessToken);
-      if (activeTheme) {
+      let themeResult = await fetchActiveTheme(cleanShop, accessToken);
+
+      // Auto-retry once if token was rejected and we have an App Bridge session token
+      if ((themeResult?.status === 401 || themeResult?.status === 403) && sessionToken) {
+        console.log(`[BloatBuster Auth] Theme API returned HTTP ${themeResult.status}. Re-exchanging session token...`);
+        const refreshedToken = await exchangeSessionToken(cleanShop, sessionToken);
+        if (refreshedToken) {
+          accessToken = refreshedToken;
+          themeResult = await fetchActiveTheme(cleanShop, accessToken);
+        }
+      }
+
+      if (themeResult && themeResult.id && !themeResult.error) {
         return sendJson(res, 200, {
           success: true,
           theme: {
-            id: activeTheme.id,
-            name: activeTheme.name,
-            role: activeTheme.role,
-            updatedAt: activeTheme.updated_at
+            id: themeResult.id,
+            name: themeResult.name,
+            role: themeResult.role,
+            updatedAt: themeResult.updated_at
           },
           hasToken: true
         });
@@ -801,18 +881,21 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, {
         success: false,
         theme: { name: 'Active Live Theme', id: 'current', role: 'main' },
-        hasToken: true
+        hasToken: true,
+        error: themeResult?.error || null
       });
     }
 
     // API: 1-Click Native Theme Code & Snippets Audit (No manual copy-pasting!)
     if (pathname === '/api/theme/scan-assets' && req.method === 'POST') {
-      const { shop, activeApps = [] } = await parseJsonBody(req);
+      const body = await parseJsonBody(req);
+      const { shop, activeApps = [] } = body;
       if (!shop) {
         return sendJson(res, 400, { error: 'Missing shop parameter for theme audit.' });
       }
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      const accessToken = await getValidAccessToken(cleanShop);
+      const sessionToken = extractSessionToken(req, body);
+      let accessToken = await getOrExchangeAccessToken(cleanShop, sessionToken);
 
       if (!accessToken) {
         return sendJson(res, 401, {
@@ -820,11 +903,24 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      const mainTheme = await fetchActiveTheme(cleanShop, accessToken);
-      if (!mainTheme?.id) {
-        return sendJson(res, 404, { error: 'Could not locate published active theme for store.' });
+      let themeResult = await fetchActiveTheme(cleanShop, accessToken);
+
+      // Auto-retry once if token was rejected and we have an App Bridge session token
+      if ((themeResult?.status === 401 || themeResult?.status === 403) && sessionToken) {
+        console.log(`[BloatBuster Auth] Theme API returned HTTP ${themeResult.status}. Re-exchanging session token...`);
+        const refreshedToken = await exchangeSessionToken(cleanShop, sessionToken);
+        if (refreshedToken) {
+          accessToken = refreshedToken;
+          themeResult = await fetchActiveTheme(cleanShop, accessToken);
+        }
       }
 
+      if (themeResult?.error || !themeResult?.id) {
+        const errorDetail = themeResult?.error || 'Could not locate published active theme for store.';
+        return sendJson(res, 400, { error: `Theme Inspection Error: ${errorDetail}` });
+      }
+
+      const mainTheme = themeResult;
       console.log(`[BloatBuster] Running 1-Click Theme Asset Audit on "${mainTheme.name}" (${mainTheme.id})...`);
 
       // Fetch theme assets list, theme.liquid, and settings_data.json in parallel
@@ -863,7 +959,8 @@ const server = http.createServer(async (req, res) => {
 
     // API: 1-Click Theme Duplication Backup (Pro Tier)
     if (pathname === '/api/theme/duplicate' && req.method === 'POST') {
-      const { shop } = await parseJsonBody(req);
+      const body = await parseJsonBody(req);
+      const { shop } = body;
       if (!shop) {
         return sendJson(res, 400, { error: 'Missing shop parameter.' });
       }
@@ -876,16 +973,26 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      const accessToken = await getValidAccessToken(cleanShop);
+      const sessionToken = extractSessionToken(req, body);
+      let accessToken = await getOrExchangeAccessToken(cleanShop, sessionToken);
       if (!accessToken) {
         return sendJson(res, 401, { error: 'Missing valid access token.' });
       }
 
-      const mainTheme = await fetchActiveTheme(cleanShop, accessToken);
-      if (!mainTheme?.id) {
-        return sendJson(res, 404, { error: 'Active theme not found.' });
+      let themeResult = await fetchActiveTheme(cleanShop, accessToken);
+      if ((themeResult?.status === 401 || themeResult?.status === 403) && sessionToken) {
+        const refreshedToken = await exchangeSessionToken(cleanShop, sessionToken);
+        if (refreshedToken) {
+          accessToken = refreshedToken;
+          themeResult = await fetchActiveTheme(cleanShop, accessToken);
+        }
       }
 
+      if (themeResult?.error || !themeResult?.id) {
+        return sendJson(res, 404, { error: themeResult?.error || 'Active theme not found.' });
+      }
+
+      const mainTheme = themeResult;
       console.log(`[BloatBuster Pro] Duplicating theme backup for "${mainTheme.name}" (${mainTheme.id})...`);
       const backupTheme = await duplicateThemeBackup(cleanShop, accessToken, mainTheme.id, mainTheme.name);
 
@@ -906,7 +1013,8 @@ const server = http.createServer(async (req, res) => {
 
     // API: 1-Click Automated Safe Deactivation / Commenting (Pro Tier)
     if (pathname === '/api/theme/clean-snippet' && req.method === 'POST') {
-      const { shop, targetLine, appName } = await parseJsonBody(req);
+      const body = await parseJsonBody(req);
+      const { shop, targetLine, appName } = body;
       if (!shop || !targetLine) {
         return sendJson(res, 400, { error: 'Missing required parameters (shop, targetLine).' });
       }
@@ -919,15 +1027,26 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      const accessToken = await getValidAccessToken(cleanShop);
+      const sessionToken = extractSessionToken(req, body);
+      let accessToken = await getOrExchangeAccessToken(cleanShop, sessionToken);
       if (!accessToken) {
         return sendJson(res, 401, { error: 'Missing valid access token.' });
       }
 
-      const mainTheme = await fetchActiveTheme(cleanShop, accessToken);
-      if (!mainTheme?.id) {
-        return sendJson(res, 404, { error: 'Active theme not found.' });
+      let themeResult = await fetchActiveTheme(cleanShop, accessToken);
+      if ((themeResult?.status === 401 || themeResult?.status === 403) && sessionToken) {
+        const refreshedToken = await exchangeSessionToken(cleanShop, sessionToken);
+        if (refreshedToken) {
+          accessToken = refreshedToken;
+          themeResult = await fetchActiveTheme(cleanShop, accessToken);
+        }
       }
+
+      if (themeResult?.error || !themeResult?.id) {
+        return sendJson(res, 404, { error: themeResult?.error || 'Active theme not found.' });
+      }
+
+      const mainTheme = themeResult;
 
       // Auto-create backup if not backed up recently
       await duplicateThemeBackup(cleanShop, accessToken, mainTheme.id, mainTheme.name);
