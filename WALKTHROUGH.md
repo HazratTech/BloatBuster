@@ -58,9 +58,11 @@ All core features have been implemented, verified with comprehensive automated t
   - **Crush.pics Image Optimizer**
   - **PushOwl Web Push Notifications**
 
-### F. Shopify Privacy Policy & API Compliance
-- **Zero Customer PII**: Updated `public/privacy.html` to explicitly confirm that BloatBuster inspects theme assets strictly in-memory during active scans and stores zero merchant customer PII.
-- **Timestamp Updated**: Updated policy revision date to September 17, 2026.
+### G. 2026 Shopify Expiring Offline Access Token & Token Recovery
+- **Security Policy Compliance**: Resolved the Shopify 2026 Admin API enforcement: `[API] Non-expiring access tokens are no longer accepted for the Admin API`.
+- **Expiring Token Exchange (`expiring: 1`)**: Updated `/api/auth/token-exchange` and the token exchange engine to explicitly pass `expiring: 1`, receiving modern 60-minute expiring tokens paired with 90-day rolling refresh tokens.
+- **App Bridge Session Token Forwarding**: Configured `public/app.js` to automatically attach the App Bridge signed JWT session token (`Authorization: Bearer <idToken>`) to all theme audit, backup, and deactivation API requests.
+- **Automatic Recovery**: If Shopify returns an HTTP 401 or 403 on a theme query, `server.js` automatically re-exchanges the session token with `expiring: 1` and transparently retries the theme query without merchant interruption.
 
 ---
 
