@@ -36,11 +36,12 @@ if (fs.existsSync(envPath)) {
 }
 
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY || 'f3c6dde5474766c85897a2bd2567ea50';
-const DEFAULT_PARTNER_SECRET = Buffer.from('REDACTED_BASE64_SECRET', 'base64').toString('utf8');
-const SHOPIFY_API_SECRET = (process.env.SHOPIFY_API_SECRET && process.env.SHOPIFY_API_SECRET.includes('redacted'))
-  ? process.env.SHOPIFY_API_SECRET
-  : DEFAULT_PARTNER_SECRET;
+const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET || '';
 const SCOPES = process.env.SCOPES || 'read_themes,write_themes';
+
+if (!SHOPIFY_API_SECRET) {
+  console.warn('[SECURITY NOTICE] SHOPIFY_API_SECRET is not set in process.env.');
+}
 
 // Helper to parse JSON body
 function parseJsonBody(req) {
