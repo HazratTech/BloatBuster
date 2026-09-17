@@ -57,7 +57,7 @@
     <!-- Navigation Tabs -->
     <nav class="nav-tabs">
       <button class="tab-link active" data-tab="scanner">Storefront Diagnostics</button>
-      <button class="tab-link" data-tab="liquid">Theme.liquid Code Inspector</button>
+      <button class="tab-link" data-tab="liquid">Theme Code & Asset Audit</button>
       <button class="tab-link" data-tab="signatures">Supported App Directory (52)</button>
     </nav>
 
@@ -71,7 +71,7 @@
         </div>
         <div>
           <div class="meta-title">Active Theme</div>
-          <div class="meta-value" id="activeThemeDisplay">Live Theme • Dawn v15.0</div>
+          <div class="meta-value" id="activeThemeDisplay">Detecting Live Theme...</div>
         </div>
       </div>
       <div class="theme-meta-item">
@@ -85,10 +85,16 @@
           <div class="meta-value" id="storeDomainHeader">Active Store</div>
         </div>
       </div>
-      <div>
-        <span class="badge badge-success">
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button class="btn-secondary" id="btnCreateBackup" style="font-size: 12px; padding: 6px 12px;">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M3.75 3A1.75 1.75 0 0 0 2 4.75v10.5c0 .966.784 1.75 1.75 1.75h12.5A1.75 1.75 0 0 0 18 15.25v-8.5A1.75 1.75 0 0 0 16.25 5h-4.836a.25.25 0 0 1-.177-.073L9.823 3.513A1.75 1.75 0 0 0 8.586 3H3.75ZM10 8a.75.75 0 0 1 .75.75v1.5h1.5a.75.75 0 0 1 0 1.5h-1.5v1.5a.75.75 0 0 1-1.5 0v-1.5h-1.5a.75.75 0 0 1 0-1.5h1.5v-1.5A.75.75 0 0 1 10 8Z" clip-rule="evenodd"/>
+          </svg>
+          Theme Backup
+        </button>
+        <span class="badge badge-success" id="backupStatusBadge">
           <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="3"/></svg>
-          Theme Backup Protected
+          Safety Backup Ready
         </span>
       </div>
     </div>
@@ -199,35 +205,123 @@
       </div>
     </div>
 
-    <!-- TAB 2: Theme.liquid Inspector -->
+    <!-- TAB 2: Native Theme Code & Asset Audit -->
     <div id="tab-liquid" class="tab-pane" style="display: none;">
-      <div class="polaris-card">
+      <!-- Native 1-Click Audit Card -->
+      <div class="polaris-card" style="margin-bottom: 20px;">
         <div class="card-section">
-          <h2 style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">Theme File Code Scanner</h2>
-          <p style="color: var(--p-color-text-secondary); font-size: 13px; margin-bottom: 16px;">
-            Paste code from <code>layout/theme.liquid</code> to pinpoint exact line numbers of orphaned <code>{% render %}</code> or <code>{% include %}</code> tags.
-          </p>
-
-          <textarea 
-            id="liquidCodeInput" 
-            style="width: 100%; height: 200px; background: var(--p-color-bg-surface-secondary); border: 1px solid var(--p-color-border); border-radius: var(--p-radius-sm); font-family: var(--p-font-mono); font-size: 12px; padding: 12px; color: var(--p-color-text); outline: none; margin-bottom: 14px;"
-            placeholder="Paste layout/theme.liquid content here..."
-          ></textarea>
-
-          <button class="btn-primary" id="scanLiquidBtn">
-            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M4 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4Zm1.5 4a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 5.5 6Zm0 3.5a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1-.75-.75Zm0 3.5a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/>
-            </svg>
-            Analyze Liquid AST
-          </button>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div>
+              <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">1-Click Native Theme Asset Audit</h2>
+              <p style="color: var(--p-color-text-secondary); font-size: 13px; max-width: 680px; line-height: 1.5;">
+                Deeply inspects your active published theme (<code>layout/theme.liquid</code>, <code>snippets/</code>, and <code>config/settings_data.json</code>) directly via the Shopify Admin API. Detects orphaned render tags and inactive snippet files left behind by uninstalled apps — zero copy-pasting required.
+              </p>
+            </div>
+            <button class="btn-primary" id="btnRunThemeAudit" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 8px 16px;">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM4.05 10a5.97 5.97 0 0 1 .79-2.92l4.16 4.16v.76a1 1 0 0 0 1 1h.5a1 1 0 0 0 1-1v-1a1 1 0 0 0-1-1h-1.5a1 1 0 0 1-1-1V8.25A.75.75 0 0 1 8.75 7.5h.5a1 1 0 0 0 1-1v-.5a1 1 0 0 0-1-1h-.25A5.99 5.99 0 0 1 10 4.05a5.98 5.98 0 0 1 5.66 4.07 1 1 0 0 0-.66.88v.5a1 1 0 0 0 1 1h.75A5.98 5.98 0 0 1 10 15.95 5.97 5.97 0 0 1 4.05 10Z" clip-rule="evenodd"/>
+              </svg>
+              Run Theme Code Audit
+            </button>
+          </div>
         </div>
 
-        <div id="liquidResultsCard" style="display: none; border-top: 1px solid var(--p-color-border);">
-          <div class="table-header">
-            <div style="font-weight: 600; font-size: 14px;">Identified Code References</div>
-            <span class="badge badge-warning" id="liquidFindingsBadge">0 Findings</span>
+        <!-- Audit Loading Spinner -->
+        <div id="themeAuditSpinner" class="scanning-indicator" style="display: none; border-top: 1px solid var(--p-color-border);">
+          <div class="polaris-spinner"></div>
+          <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;" id="themeAuditStatusMsg">Connecting to Shopify Theme API...</div>
+          <div style="font-size: 12px; color: var(--p-color-text-secondary);">Querying layout/theme.liquid &bull; Checking config/settings_data.json &bull; Cataloging snippets/</div>
+        </div>
+
+        <!-- Theme Audit Results View -->
+        <div id="themeAuditResultsCard" style="display: none; border-top: 1px solid var(--p-color-border);">
+          <!-- Mini Metrics -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; padding: 20px; background: var(--p-color-bg-surface-secondary); border-bottom: 1px solid var(--p-color-border);">
+            <div style="background: var(--p-color-bg-surface); padding: 14px; border-radius: var(--p-radius-sm); border: 1px solid var(--p-color-border);">
+              <div style="font-size: 12px; color: var(--p-color-text-secondary); margin-bottom: 4px;">Orphan Liquid Tags</div>
+              <div style="font-size: 20px; font-weight: 700; color: var(--p-color-critical);" id="kpiThemeOrphanTags">0 Tags</div>
+              <div style="font-size: 11px; color: var(--p-color-text-subdued);">Dead render/include calls in theme.liquid</div>
+            </div>
+            <div style="background: var(--p-color-bg-surface); padding: 14px; border-radius: var(--p-radius-sm); border: 1px solid var(--p-color-border);">
+              <div style="font-size: 12px; color: var(--p-color-text-secondary); margin-bottom: 4px;">Orphan Snippet Files</div>
+              <div style="font-size: 20px; font-weight: 700; color: var(--p-color-warning);" id="kpiThemeSnippets">0 Files</div>
+              <div style="font-size: 11px; color: var(--p-color-text-subdued);">Leftover .liquid files in snippets/</div>
+            </div>
+            <div style="background: var(--p-color-bg-surface); padding: 14px; border-radius: var(--p-radius-sm); border: 1px solid var(--p-color-border);">
+              <div style="font-size: 12px; color: var(--p-color-text-secondary); margin-bottom: 4px;">Verified Active App Embeds</div>
+              <div style="font-size: 20px; font-weight: 700; color: var(--p-color-primary);" id="kpiThemeActiveEmbeds">0 Embeds</div>
+              <div style="font-size: 11px; color: var(--p-color-text-subdued);">Active OS 2.0 app blocks in use</div>
+            </div>
           </div>
-          <div id="liquidFindingsContainer"></div>
+
+          <!-- Section 1: Orphan Liquid Tags in theme.liquid -->
+          <div style="padding: 16px 20px; border-bottom: 1px solid var(--p-color-border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                <h3 style="font-size: 14px; font-weight: 600;">Dead Code in layout/theme.liquid</h3>
+                <div style="font-size: 12px; color: var(--p-color-text-secondary);">These lines make render/include calls to apps that are no longer installed.</div>
+              </div>
+              <span class="badge badge-critical" id="themeLiquidCountBadge">0 Findings</span>
+            </div>
+            <div id="themeLiquidFindingsContainer"></div>
+          </div>
+
+          <!-- Section 2: Orphan Snippet Files in snippets/ -->
+          <div style="padding: 16px 20px; border-bottom: 1px solid var(--p-color-border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                <h3 style="font-size: 14px; font-weight: 600;">Orphan Snippet Files in snippets/</h3>
+                <div style="font-size: 12px; color: var(--p-color-text-secondary);">Unused Liquid files left behind after app uninstallation. Safe to delete in Theme Code Editor.</div>
+              </div>
+              <span class="badge badge-warning" id="themeSnippetCountBadge">0 Snippets</span>
+            </div>
+            <div id="themeSnippetFilesContainer"></div>
+          </div>
+
+          <!-- Section 3: Verified Active App Embeds -->
+          <div style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                <h3 style="font-size: 14px; font-weight: 600;">Verified Active App Embeds (Protected)</h3>
+                <div style="font-size: 12px; color: var(--p-color-text-secondary);">These apps are enabled in your Theme Customizer and are automatically protected from removal.</div>
+              </div>
+              <span class="badge badge-success" id="themeActiveCountBadge">0 Active</span>
+            </div>
+            <div id="themeActiveEmbedsContainer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced Collapsible: Manual Liquid Code AST Inspector -->
+      <div class="polaris-card">
+        <div class="card-section" style="cursor: pointer;" onclick="toggleManualLiquidInspector()">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h2 style="font-size: 14px; font-weight: 600;">Manual Theme.liquid Inspector (Developer Fallback)</h2>
+              <p style="color: var(--p-color-text-secondary); font-size: 12.5px;">Paste offline Liquid snippets to test individual code blocks against 52 app signatures.</p>
+            </div>
+            <span style="font-size: 18px; color: var(--p-color-text-secondary);" id="manualInspectorArrow">&#9660;</span>
+          </div>
+        </div>
+
+        <div id="manualLiquidBody" style="display: none; padding: 0 20px 20px; border-top: 1px solid var(--p-color-border);">
+          <textarea 
+            id="liquidCodeInput" 
+            style="width: 100%; height: 160px; background: var(--p-color-bg-surface-secondary); border: 1px solid var(--p-color-border); border-radius: var(--p-radius-sm); font-family: var(--p-font-mono); font-size: 12px; padding: 12px; color: var(--p-color-text); outline: none; margin: 14px 0;"
+            placeholder="Paste raw theme.liquid content here..."
+          ></textarea>
+
+          <button class="btn-secondary" id="scanLiquidBtn">
+            Analyze Raw Liquid Block
+          </button>
+
+          <div id="liquidResultsCard" style="display: none; margin-top: 16px; border-top: 1px solid var(--p-color-border); padding-top: 14px;">
+            <div class="table-header">
+              <div style="font-weight: 600; font-size: 13.5px;">Identified Code References</div>
+              <span class="badge badge-warning" id="liquidFindingsBadge">0 Findings</span>
+            </div>
+            <div id="liquidFindingsContainer"></div>
+          </div>
         </div>
       </div>
     </div>

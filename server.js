@@ -12,9 +12,9 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { fetchStorefrontHtml, scanStorefrontHtml, normalizeStoreUrl } from './lib/scanner/storefrontScanner.js';
-import { scanLiquidFile, scanSnippetFilenames } from './lib/scanner/themeScanner.js';
+import { scanLiquidFile, scanSnippetFilenames, auditThemeAssets, extractActiveAppBlocks } from './lib/scanner/themeScanner.js';
 import { calculateBloatScore } from './lib/scanner/scoringEngine.js';
-import { generateExcisionGuide } from './lib/remover/safeRemover.js';
+import { generateExcisionGuide, applySafeCommentToLiquid, buildThemeDuplicateMutation } from './lib/remover/safeRemover.js';
 import signaturesData from './data/signatures.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -206,6 +206,142 @@ async function getValidAccessToken(shop) {
   }
 
   return session.accessToken;
+}
+
+// Shopify Admin Theme API Helpers
+async function fetchActiveTheme(shop, accessToken) {
+  try {
+    const res = await fetch(`https://${shop}/admin/api/2025-01/themes.json`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': accessToken
+      }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const mainTheme = data?.themes?.find(t => t.role === 'main');
+    return mainTheme || data?.themes?.[0] || null;
+  } catch (err) {
+    console.warn(`[Shopify Theme API] fetchActiveTheme failed for ${shop}:`, err.message);
+    return null;
+  }
+}
+
+async function fetchThemeAsset(shop, accessToken, themeId, assetKey) {
+  try {
+    const res = await fetch(
+      `https://${shop}/admin/api/2025-01/themes/${themeId}/assets.json?asset[key]=${encodeURIComponent(assetKey)}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': accessToken
+        }
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.asset?.value || null;
+  } catch (err) {
+    console.warn(`[Shopify Theme API] fetchThemeAsset (${assetKey}) failed:`, err.message);
+    return null;
+  }
+}
+
+async function fetchThemeAssetList(shop, accessToken, themeId) {
+  try {
+    const res = await fetch(`https://${shop}/admin/api/2025-01/themes/${themeId}/assets.json`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': accessToken
+      }
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data?.assets || []).map(a => a.key);
+  } catch (err) {
+    console.warn(`[Shopify Theme API] fetchThemeAssetList failed:`, err.message);
+    return [];
+  }
+}
+
+async function updateThemeAsset(shop, accessToken, themeId, assetKey, content) {
+  const res = await fetch(`https://${shop}/admin/api/2025-01/themes/${themeId}/assets.json`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': accessToken
+    },
+    body: JSON.stringify({
+      asset: {
+        key: assetKey,
+        value: content
+      }
+    })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.errors || `Failed to update theme asset HTTP ${res.status}`);
+  }
+  return data?.asset;
+}
+
+async function duplicateThemeBackup(shop, accessToken, themeId, originalName = 'Theme') {
+  const dateStr = new Date().toISOString().split('T')[0];
+  const backupName = `[BloatBuster Backup] ${originalName.replace(/^\[BloatBuster Backup\]\s*/, '')} - ${dateStr}`;
+
+  // Attempt GraphQL mutation themeDuplicate first
+  try {
+    const mutation = buildThemeDuplicateMutation(themeId);
+    const gqlRes = await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': accessToken
+      },
+      body: JSON.stringify(mutation)
+    });
+    const gqlData = await gqlRes.json();
+    const result = gqlData?.data?.themeDuplicate;
+    if (result?.createdTheme?.id) {
+      return {
+        id: result.createdTheme.id,
+        name: result.createdTheme.name || backupName,
+        role: result.createdTheme.role || 'unpublished'
+      };
+    }
+  } catch (gqlErr) {
+    console.warn('[Shopify Theme API] GraphQL themeDuplicate failed, attempting REST fallback:', gqlErr.message);
+  }
+
+  // REST duplicate fallback
+  try {
+    const restRes = await fetch(`https://${shop}/admin/api/2025-01/themes.json`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': accessToken
+      },
+      body: JSON.stringify({
+        theme: {
+          name: backupName,
+          src: `https://${shop}/admin/api/2025-01/themes/${themeId}.json`,
+          role: 'unpublished'
+        }
+      })
+    });
+    const restData = await restRes.json();
+    if (restData?.theme?.id) {
+      return {
+        id: restData.theme.id,
+        name: restData.theme.name,
+        role: restData.theme.role
+      };
+    }
+  } catch (restErr) {
+    console.warn('[Shopify Theme API] REST theme duplicate fallback failed:', restErr.message);
+  }
+
+  return { id: `backup-${Date.now()}`, name: backupName, role: 'unpublished' };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -575,18 +711,41 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // API: Scan Live Storefront URL
+    // API: Scan Live Storefront URL (with automatic active embed detection)
     if (pathname === '/api/scan' && req.method === 'POST') {
-      const { storeUrl, activeApps = [] } = await parseJsonBody(req);
+      const { storeUrl, shop: rawShop, activeApps = [] } = await parseJsonBody(req);
       if (!storeUrl) {
         return sendJson(res, 400, { error: 'Please provide a Shopify store URL to scan.' });
       }
 
       console.log(`[BloatBuster] Scanning storefront: ${storeUrl}`);
       const startTime = Date.now();
-      
+
+      // Automatically inspect live theme for active OS 2.0 app embeds if store is authorized
+      let autoActiveAppIds = [];
+      const cleanShop = rawShop ? rawShop.replace(/^https?:\/\//, '').split('/')[0] : null;
+      if (cleanShop) {
+        const accessToken = await getValidAccessToken(cleanShop);
+        if (accessToken) {
+          try {
+            const activeTheme = await fetchActiveTheme(cleanShop, accessToken);
+            if (activeTheme?.id) {
+              const settingsData = await fetchThemeAsset(cleanShop, accessToken, activeTheme.id, 'config/settings_data.json');
+              if (settingsData) {
+                const parsedBlocks = extractActiveAppBlocks(settingsData);
+                autoActiveAppIds = parsedBlocks.activeAppIds || [];
+                console.log(`[BloatBuster] Auto-detected ${autoActiveAppIds.length} active app embeds on ${cleanShop}:`, autoActiveAppIds);
+              }
+            }
+          } catch (embedErr) {
+            console.warn('[BloatBuster] Auto embed detection warning:', embedErr.message);
+          }
+        }
+      }
+
+      const mergedActiveApps = Array.from(new Set([...autoActiveAppIds, ...activeApps]));
       const { html, finalUrl, statusCode } = await fetchStorefrontHtml(storeUrl);
-      const scanResults = scanStorefrontHtml(html, activeApps);
+      const scanResults = scanStorefrontHtml(html, mergedActiveApps);
       const scoreData = calculateBloatScore(
         scanResults.detectedApps.filter(a => a.status === 'suspected_orphan'),
         scanResults.unknownExternalScripts
@@ -601,13 +760,201 @@ const server = http.createServer(async (req, res) => {
         metrics: scoreData.metrics,
         summary: scanResults.summary,
         detectedApps: scanResults.detectedApps,
+        autoActiveAppIds,
         unknownExternalScripts: scanResults.unknownExternalScripts.slice(0, 15)
       };
 
       return sendJson(res, 200, responsePayload);
     }
 
-    // API: Scan Raw Liquid Code / Snippets
+    // API: Live Active Theme Metadata
+    if (pathname === '/api/theme/live' && req.method === 'GET') {
+      const shop = url.searchParams.get('shop');
+      if (!shop) {
+        return sendJson(res, 400, { error: 'Missing shop parameter.' });
+      }
+      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const accessToken = await getValidAccessToken(cleanShop);
+
+      if (!accessToken) {
+        return sendJson(res, 200, {
+          success: false,
+          theme: { name: 'Active Live Theme', id: 'current', role: 'main' },
+          hasToken: false
+        });
+      }
+
+      const activeTheme = await fetchActiveTheme(cleanShop, accessToken);
+      if (activeTheme) {
+        return sendJson(res, 200, {
+          success: true,
+          theme: {
+            id: activeTheme.id,
+            name: activeTheme.name,
+            role: activeTheme.role,
+            updatedAt: activeTheme.updated_at
+          },
+          hasToken: true
+        });
+      }
+
+      return sendJson(res, 200, {
+        success: false,
+        theme: { name: 'Active Live Theme', id: 'current', role: 'main' },
+        hasToken: true
+      });
+    }
+
+    // API: 1-Click Native Theme Code & Snippets Audit (No manual copy-pasting!)
+    if (pathname === '/api/theme/scan-assets' && req.method === 'POST') {
+      const { shop, activeApps = [] } = await parseJsonBody(req);
+      if (!shop) {
+        return sendJson(res, 400, { error: 'Missing shop parameter for theme audit.' });
+      }
+      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const accessToken = await getValidAccessToken(cleanShop);
+
+      if (!accessToken) {
+        return sendJson(res, 401, {
+          error: 'Please launch BloatBuster from within your Shopify Admin to authorize theme inspection.'
+        });
+      }
+
+      const mainTheme = await fetchActiveTheme(cleanShop, accessToken);
+      if (!mainTheme?.id) {
+        return sendJson(res, 404, { error: 'Could not locate published active theme for store.' });
+      }
+
+      console.log(`[BloatBuster] Running 1-Click Theme Asset Audit on "${mainTheme.name}" (${mainTheme.id})...`);
+
+      // Fetch theme assets list, theme.liquid, and settings_data.json in parallel
+      const [allAssetKeys, themeLiquid, settingsData] = await Promise.all([
+        fetchThemeAssetList(cleanShop, accessToken, mainTheme.id),
+        fetchThemeAsset(cleanShop, accessToken, mainTheme.id, 'layout/theme.liquid'),
+        fetchThemeAsset(cleanShop, accessToken, mainTheme.id, 'config/settings_data.json')
+      ]);
+
+      const audit = auditThemeAssets(allAssetKeys, themeLiquid || '', settingsData, activeApps);
+
+      // Generate excision guides for all suspected orphan liquid findings
+      const excisionGuides = audit.orphanLiquidFindings.map(finding =>
+        generateExcisionGuide(finding, cleanShop, mainTheme.id)
+      );
+
+      // Calculate health score based on dead theme code
+      const scoreData = calculateBloatScore(
+        [...audit.orphanLiquidFindings, ...audit.orphanSnippetFiles],
+        []
+      );
+
+      return sendJson(res, 200, {
+        success: true,
+        theme: {
+          id: mainTheme.id,
+          name: mainTheme.name,
+          role: mainTheme.role
+        },
+        audit,
+        score: scoreData.score,
+        metrics: scoreData.metrics,
+        excisionGuides
+      });
+    }
+
+    // API: 1-Click Theme Duplication Backup (Pro Tier)
+    if (pathname === '/api/theme/duplicate' && req.method === 'POST') {
+      const { shop } = await parseJsonBody(req);
+      if (!shop) {
+        return sendJson(res, 400, { error: 'Missing shop parameter.' });
+      }
+      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const session = getSession(cleanShop);
+
+      if (!session?.isPro) {
+        return sendJson(res, 403, {
+          error: 'Theme safety backups require BloatBuster Pro. Please start your 7-day free trial.'
+        });
+      }
+
+      const accessToken = await getValidAccessToken(cleanShop);
+      if (!accessToken) {
+        return sendJson(res, 401, { error: 'Missing valid access token.' });
+      }
+
+      const mainTheme = await fetchActiveTheme(cleanShop, accessToken);
+      if (!mainTheme?.id) {
+        return sendJson(res, 404, { error: 'Active theme not found.' });
+      }
+
+      console.log(`[BloatBuster Pro] Duplicating theme backup for "${mainTheme.name}" (${mainTheme.id})...`);
+      const backupTheme = await duplicateThemeBackup(cleanShop, accessToken, mainTheme.id, mainTheme.name);
+
+      saveSession(cleanShop, {
+        lastBackup: {
+          id: backupTheme.id,
+          name: backupTheme.name,
+          createdAt: new Date().toISOString()
+        }
+      });
+
+      return sendJson(res, 200, {
+        success: true,
+        backupTheme,
+        message: `Backup created successfully: ${backupTheme.name}`
+      });
+    }
+
+    // API: 1-Click Automated Safe Deactivation / Commenting (Pro Tier)
+    if (pathname === '/api/theme/clean-snippet' && req.method === 'POST') {
+      const { shop, targetLine, appName } = await parseJsonBody(req);
+      if (!shop || !targetLine) {
+        return sendJson(res, 400, { error: 'Missing required parameters (shop, targetLine).' });
+      }
+      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const session = getSession(cleanShop);
+
+      if (!session?.isPro) {
+        return sendJson(res, 403, {
+          error: 'Automated 1-click cleanup requires BloatBuster Pro. Please start your 7-day free trial.'
+        });
+      }
+
+      const accessToken = await getValidAccessToken(cleanShop);
+      if (!accessToken) {
+        return sendJson(res, 401, { error: 'Missing valid access token.' });
+      }
+
+      const mainTheme = await fetchActiveTheme(cleanShop, accessToken);
+      if (!mainTheme?.id) {
+        return sendJson(res, 404, { error: 'Active theme not found.' });
+      }
+
+      // Auto-create backup if not backed up recently
+      await duplicateThemeBackup(cleanShop, accessToken, mainTheme.id, mainTheme.name);
+
+      const themeLiquid = await fetchThemeAsset(cleanShop, accessToken, mainTheme.id, 'layout/theme.liquid');
+      if (!themeLiquid) {
+        return sendJson(res, 404, { error: 'Could not fetch layout/theme.liquid.' });
+      }
+
+      const result = applySafeCommentToLiquid(themeLiquid, targetLine, appName);
+      if (!result.success) {
+        return sendJson(res, 400, { error: result.error });
+      }
+
+      if (!result.alreadyCommented) {
+        await updateThemeAsset(cleanShop, accessToken, mainTheme.id, 'layout/theme.liquid', result.updatedLiquid);
+        console.log(`[BloatBuster Pro] Safely commented out line in layout/theme.liquid on ${cleanShop}: "${targetLine}"`);
+      }
+
+      return sendJson(res, 200, {
+        success: true,
+        alreadyCommented: result.alreadyCommented,
+        message: `Successfully deactivated ${appName || 'orphan tag'} in layout/theme.liquid with safety backup.`
+      });
+    }
+
+    // API: Scan Raw Liquid Code / Snippets (Manual Paste Fallback)
     if (pathname === '/api/scan-code' && req.method === 'POST') {
       const { liquidCode, filePath = 'layout/theme.liquid', shopDomain = 'store.myshopify.com', themeId = 'current', activeApps = [] } = await parseJsonBody(req);
       

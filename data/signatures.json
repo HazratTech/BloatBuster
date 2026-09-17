@@ -6,10 +6,25 @@
       "id": "klaviyo",
       "name": "Klaviyo: Email & SMS",
       "category": "Email & SMS Marketing",
-      "domainPatterns": ["static.klaviyo.com", "klaviyo.js", "a.klaviyo.com"],
-      "inlinePatterns": ["_learnq", "klaviyo.push", "klaviyo.init"],
-      "snippetPatterns": ["klaviyo.liquid", "klaviyo-onsite.liquid", "snippets/klaviyo"],
-      "liquidPatterns": ["render\\s+['\"]klaviyo['\"]", "include\\s+['\"]klaviyo['\"]"],
+      "domainPatterns": [
+        "static.klaviyo.com",
+        "klaviyo.js",
+        "a.klaviyo.com"
+      ],
+      "inlinePatterns": [
+        "_learnq",
+        "klaviyo.push",
+        "klaviyo.init"
+      ],
+      "snippetPatterns": [
+        "klaviyo.liquid",
+        "klaviyo-onsite.liquid",
+        "snippets/klaviyo"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]klaviyo['\"]",
+        "include\\s+['\"]klaviyo['\"]"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 185,
       "avgDelayMs": 320,
@@ -20,10 +35,24 @@
       "id": "loox",
       "name": "Loox: Product Reviews & Photos",
       "category": "Reviews & Social Proof",
-      "domainPatterns": ["loox.io", "cdn.loox.io"],
-      "inlinePatterns": ["loox_settings", "looxLoaded", "looxGlobal"],
-      "snippetPatterns": ["loox-rating.liquid", "loox-widget.liquid", "snippets/loox"],
-      "liquidPatterns": ["render\\s+['\"]loox", "include\\s+['\"]loox"],
+      "domainPatterns": [
+        "loox.io",
+        "cdn.loox.io"
+      ],
+      "inlinePatterns": [
+        "loox_settings",
+        "looxLoaded",
+        "looxGlobal"
+      ],
+      "snippetPatterns": [
+        "loox-rating.liquid",
+        "loox-widget.liquid",
+        "snippets/loox"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]loox",
+        "include\\s+['\"]loox"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 210,
       "avgDelayMs": 380,
@@ -34,10 +63,24 @@
       "id": "judgeme",
       "name": "Judge.me: Product Reviews",
       "category": "Reviews & Social Proof",
-      "domainPatterns": ["cdn.judge.me", "judge.me"],
-      "inlinePatterns": ["jdgm", "jdgm_all_reviews", "jdgmSettings"],
-      "snippetPatterns": ["judgeme_core.liquid", "judgeme_widgets.liquid", "snippets/judgeme"],
-      "liquidPatterns": ["render\\s+['\"]judgeme", "include\\s+['\"]judgeme"],
+      "domainPatterns": [
+        "cdn.judge.me",
+        "judge.me"
+      ],
+      "inlinePatterns": [
+        "jdgm",
+        "jdgm_all_reviews",
+        "jdgmSettings"
+      ],
+      "snippetPatterns": [
+        "judgeme_core.liquid",
+        "judgeme_widgets.liquid",
+        "snippets/judgeme"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]judgeme",
+        "include\\s+['\"]judgeme"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 160,
       "avgDelayMs": 280,
@@ -48,10 +91,25 @@
       "id": "yotpo",
       "name": "Yotpo: Reviews & Loyalty",
       "category": "Reviews & Social Proof",
-      "domainPatterns": ["static.yotpo.com", "cdn-widgetsrepository.yotpo.com", "yotpo.com"],
-      "inlinePatterns": ["yotpoTrack", "yotpoInit", "yotpoSettings"],
-      "snippetPatterns": ["yotpo.liquid", "yotpo-reviews.liquid", "snippets/yotpo"],
-      "liquidPatterns": ["render\\s+['\"]yotpo", "include\\s+['\"]yotpo"],
+      "domainPatterns": [
+        "static.yotpo.com",
+        "cdn-widgetsrepository.yotpo.com",
+        "yotpo.com"
+      ],
+      "inlinePatterns": [
+        "yotpoTrack",
+        "yotpoInit",
+        "yotpoSettings"
+      ],
+      "snippetPatterns": [
+        "yotpo.liquid",
+        "yotpo-reviews.liquid",
+        "snippets/yotpo"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]yotpo",
+        "include\\s+['\"]yotpo"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 240,
       "avgDelayMs": 420,
@@ -62,10 +120,24 @@
       "id": "hotjar",
       "name": "Hotjar: Heatmaps & Screen Recording",
       "category": "Analytics & Heatmaps",
-      "domainPatterns": ["static.hotjar.com", "script.hotjar.com"],
-      "inlinePatterns": ["_hjSettings", "hjid", "hjsv", "hj\\("],
-      "snippetPatterns": ["hotjar.liquid", "snippets/hotjar"],
-      "liquidPatterns": ["render\\s+['\"]hotjar", "include\\s+['\"]hotjar"],
+      "domainPatterns": [
+        "static.hotjar.com",
+        "script.hotjar.com"
+      ],
+      "inlinePatterns": [
+        "_hjSettings",
+        "hjid",
+        "hjsv",
+        "hj\\("
+      ],
+      "snippetPatterns": [
+        "hotjar.liquid",
+        "snippets/hotjar"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]hotjar",
+        "include\\s+['\"]hotjar"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 190,
       "avgDelayMs": 450,
@@ -76,10 +148,23 @@
       "id": "clarity",
       "name": "Microsoft Clarity",
       "category": "Analytics & Heatmaps",
-      "domainPatterns": ["www.clarity.ms", "clarity.ms/tag"],
-      "inlinePatterns": ["clarity\\(\"set\"", "clarity\\(\"identify\"", "window.clarity"],
-      "snippetPatterns": ["clarity.liquid", "snippets/clarity"],
-      "liquidPatterns": ["render\\s+['\"]clarity", "include\\s+['\"]clarity"],
+      "domainPatterns": [
+        "www.clarity.ms",
+        "clarity.ms/tag"
+      ],
+      "inlinePatterns": [
+        "clarity\\(\"set\"",
+        "clarity\\(\"identify\"",
+        "window.clarity"
+      ],
+      "snippetPatterns": [
+        "clarity.liquid",
+        "snippets/clarity"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]clarity",
+        "include\\s+['\"]clarity"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 130,
       "avgDelayMs": 310,
@@ -90,10 +175,23 @@
       "id": "luckyorange",
       "name": "Lucky Orange: Heatmaps & Chat",
       "category": "Analytics & Heatmaps",
-      "domainPatterns": ["luckyorange.net", "d10lpsik1i8c69.cloudfront.net", "upload.luckyorange.net"],
-      "inlinePatterns": ["__wtw_lucky_site_id", "__wtw_lucky_is_recording"],
-      "snippetPatterns": ["luckyorange.liquid", "snippets/luckyorange"],
-      "liquidPatterns": ["render\\s+['\"]luckyorange", "include\\s+['\"]luckyorange"],
+      "domainPatterns": [
+        "luckyorange.net",
+        "d10lpsik1i8c69.cloudfront.net",
+        "upload.luckyorange.net"
+      ],
+      "inlinePatterns": [
+        "__wtw_lucky_site_id",
+        "__wtw_lucky_is_recording"
+      ],
+      "snippetPatterns": [
+        "luckyorange.liquid",
+        "snippets/luckyorange"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]luckyorange",
+        "include\\s+['\"]luckyorange"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 175,
       "avgDelayMs": 390,
@@ -104,10 +202,22 @@
       "id": "privy",
       "name": "Privy: Popups, Email & SMS",
       "category": "Email & SMS Marketing",
-      "domainPatterns": ["widget.privy.com", "assets.privy.com"],
-      "inlinePatterns": ["Privy.initialize", "privy_widget"],
-      "snippetPatterns": ["privy.liquid", "snippets/privy"],
-      "liquidPatterns": ["render\\s+['\"]privy", "include\\s+['\"]privy"],
+      "domainPatterns": [
+        "widget.privy.com",
+        "assets.privy.com"
+      ],
+      "inlinePatterns": [
+        "Privy.initialize",
+        "privy_widget"
+      ],
+      "snippetPatterns": [
+        "privy.liquid",
+        "snippets/privy"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]privy",
+        "include\\s+['\"]privy"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 195,
       "avgDelayMs": 340,
@@ -118,10 +228,22 @@
       "id": "omnisend",
       "name": "Omnisend: Email Marketing",
       "category": "Email & SMS Marketing",
-      "domainPatterns": ["omnisnippet1.com", "omnisend.com"],
-      "inlinePatterns": ["omnisend.push", "_omnisend"],
-      "snippetPatterns": ["omnisend.liquid", "snippets/omnisend"],
-      "liquidPatterns": ["render\\s+['\"]omnisend", "include\\s+['\"]omnisend"],
+      "domainPatterns": [
+        "omnisnippet1.com",
+        "omnisend.com"
+      ],
+      "inlinePatterns": [
+        "omnisend.push",
+        "_omnisend"
+      ],
+      "snippetPatterns": [
+        "omnisend.liquid",
+        "snippets/omnisend"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]omnisend",
+        "include\\s+['\"]omnisend"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 160,
       "avgDelayMs": 290,
@@ -132,10 +254,22 @@
       "id": "widebundle",
       "name": "WideBundle: Offers & Bundles",
       "category": "Upsells & Bundles",
-      "domainPatterns": ["widebundle.com", "cdn.widebundle.com"],
-      "inlinePatterns": ["widebundle", "WideBundleApp"],
-      "snippetPatterns": ["widebundle.liquid", "snippets/widebundle"],
-      "liquidPatterns": ["render\\s+['\"]widebundle", "include\\s+['\"]widebundle"],
+      "domainPatterns": [
+        "widebundle.com",
+        "cdn.widebundle.com"
+      ],
+      "inlinePatterns": [
+        "widebundle",
+        "WideBundleApp"
+      ],
+      "snippetPatterns": [
+        "widebundle.liquid",
+        "snippets/widebundle"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]widebundle",
+        "include\\s+['\"]widebundle"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 120,
       "avgDelayMs": 210,
@@ -146,10 +280,22 @@
       "id": "reconvert",
       "name": "ReConvert: Post Purchase Upsell",
       "category": "Upsells & Bundles",
-      "domainPatterns": ["reconvert.io", "stik-reconvert"],
-      "inlinePatterns": ["reconvertSettings", "ReConvertApp"],
-      "snippetPatterns": ["reconvert.liquid", "snippets/reconvert"],
-      "liquidPatterns": ["render\\s+['\"]reconvert", "include\\s+['\"]reconvert"],
+      "domainPatterns": [
+        "reconvert.io",
+        "stik-reconvert"
+      ],
+      "inlinePatterns": [
+        "reconvertSettings",
+        "ReConvertApp"
+      ],
+      "snippetPatterns": [
+        "reconvert.liquid",
+        "snippets/reconvert"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]reconvert",
+        "include\\s+['\"]reconvert"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 110,
       "avgDelayMs": 190,
@@ -160,10 +306,23 @@
       "id": "gorgias",
       "name": "Gorgias: Customer Support Chat",
       "category": "Customer Support & Chat",
-      "domainPatterns": ["config.gorgias.chat", "contact.gorgias.chat", "gorgias.com"],
-      "inlinePatterns": ["GorgiasChat", "gorgias-chat-container"],
-      "snippetPatterns": ["gorgias-chat.liquid", "snippets/gorgias"],
-      "liquidPatterns": ["render\\s+['\"]gorgias", "include\\s+['\"]gorgias"],
+      "domainPatterns": [
+        "config.gorgias.chat",
+        "contact.gorgias.chat",
+        "gorgias.com"
+      ],
+      "inlinePatterns": [
+        "GorgiasChat",
+        "gorgias-chat-container"
+      ],
+      "snippetPatterns": [
+        "gorgias-chat.liquid",
+        "snippets/gorgias"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]gorgias",
+        "include\\s+['\"]gorgias"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 270,
       "avgDelayMs": 510,
@@ -174,10 +333,22 @@
       "id": "tidio",
       "name": "Tidio: Live Chat & AI Bots",
       "category": "Customer Support & Chat",
-      "domainPatterns": ["code.tidio.co", "tidio.com"],
-      "inlinePatterns": ["tidioChatApi", "tidioIdentify"],
-      "snippetPatterns": ["tidio.liquid", "snippets/tidio"],
-      "liquidPatterns": ["render\\s+['\"]tidio", "include\\s+['\"]tidio"],
+      "domainPatterns": [
+        "code.tidio.co",
+        "tidio.com"
+      ],
+      "inlinePatterns": [
+        "tidioChatApi",
+        "tidioIdentify"
+      ],
+      "snippetPatterns": [
+        "tidio.liquid",
+        "snippets/tidio"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]tidio",
+        "include\\s+['\"]tidio"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 230,
       "avgDelayMs": 440,
@@ -188,10 +359,25 @@
       "id": "zendesk",
       "name": "Zendesk Chat & Support",
       "category": "Customer Support & Chat",
-      "domainPatterns": ["static.zdassets.com", "ekr.zdassets.com", "zendesk.com"],
-      "inlinePatterns": ["window.zESettings", "zESettings", "zEmbed", "zendesk_key"],
-      "snippetPatterns": ["zendesk.liquid", "snippets/zendesk"],
-      "liquidPatterns": ["render\\s+['\"]zendesk", "include\\s+['\"]zendesk"],
+      "domainPatterns": [
+        "static.zdassets.com",
+        "ekr.zdassets.com",
+        "zendesk.com"
+      ],
+      "inlinePatterns": [
+        "window.zESettings",
+        "zESettings",
+        "zEmbed",
+        "zendesk_key"
+      ],
+      "snippetPatterns": [
+        "zendesk.liquid",
+        "snippets/zendesk"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]zendesk",
+        "include\\s+['\"]zendesk"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 260,
       "avgDelayMs": 480,
@@ -202,10 +388,21 @@
       "id": "crisp",
       "name": "Crisp: Live Chat",
       "category": "Customer Support & Chat",
-      "domainPatterns": ["client.crisp.chat"],
-      "inlinePatterns": ["$crisp", "CRISP_WEBSITE_ID"],
-      "snippetPatterns": ["crisp.liquid", "snippets/crisp"],
-      "liquidPatterns": ["render\\s+['\"]crisp", "include\\s+['\"]crisp"],
+      "domainPatterns": [
+        "client.crisp.chat"
+      ],
+      "inlinePatterns": [
+        "$crisp",
+        "CRISP_WEBSITE_ID"
+      ],
+      "snippetPatterns": [
+        "crisp.liquid",
+        "snippets/crisp"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]crisp",
+        "include\\s+['\"]crisp"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 210,
       "avgDelayMs": 390,
@@ -216,10 +413,24 @@
       "id": "recharge",
       "name": "Recharge: Subscriptions",
       "category": "Subscriptions",
-      "domainPatterns": ["rechargecdn.com", "rechargeapps.com"],
-      "inlinePatterns": ["rechargeConfig", "ReChargeSettings"],
-      "snippetPatterns": ["subscription-cart-footer.liquid", "recharge.liquid", "snippets/recharge"],
-      "liquidPatterns": ["render\\s+['\"]recharge", "include\\s+['\"]recharge", "subscription-theme-footer"],
+      "domainPatterns": [
+        "rechargecdn.com",
+        "rechargeapps.com"
+      ],
+      "inlinePatterns": [
+        "rechargeConfig",
+        "ReChargeSettings"
+      ],
+      "snippetPatterns": [
+        "subscription-cart-footer.liquid",
+        "recharge.liquid",
+        "snippets/recharge"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]recharge",
+        "include\\s+['\"]recharge",
+        "subscription-theme-footer"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 140,
       "avgDelayMs": 240,
@@ -230,10 +441,23 @@
       "id": "bold_subscriptions",
       "name": "Bold Subscriptions",
       "category": "Subscriptions",
-      "domainPatterns": ["boldcommerce.com", "boldapps.com"],
-      "inlinePatterns": ["BOLD.subscriptions", "bold_subscription_info"],
-      "snippetPatterns": ["bold-subscriptions.liquid", "bold-common.liquid", "snippets/bold-"],
-      "liquidPatterns": ["render\\s+['\"]bold", "include\\s+['\"]bold"],
+      "domainPatterns": [
+        "boldcommerce.com",
+        "boldapps.com"
+      ],
+      "inlinePatterns": [
+        "BOLD.subscriptions",
+        "bold_subscription_info"
+      ],
+      "snippetPatterns": [
+        "bold-subscriptions.liquid",
+        "bold-common.liquid",
+        "snippets/bold-"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]bold",
+        "include\\s+['\"]bold"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 150,
       "avgDelayMs": 260,
@@ -244,10 +468,23 @@
       "id": "pagefly",
       "name": "PageFly: Landing Page Builder",
       "category": "Page Builders",
-      "domainPatterns": ["cdn.pagefly.io", "pagefly.io"],
-      "inlinePatterns": ["__pagefly", "PageFlyGlobal"],
-      "snippetPatterns": ["pagefly-head.liquid", "pagefly-main.liquid", "snippets/pagefly"],
-      "liquidPatterns": ["render\\s+['\"]pagefly", "include\\s+['\"]pagefly"],
+      "domainPatterns": [
+        "cdn.pagefly.io",
+        "pagefly.io"
+      ],
+      "inlinePatterns": [
+        "__pagefly",
+        "PageFlyGlobal"
+      ],
+      "snippetPatterns": [
+        "pagefly-head.liquid",
+        "pagefly-main.liquid",
+        "snippets/pagefly"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]pagefly",
+        "include\\s+['\"]pagefly"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 280,
       "avgDelayMs": 520,
@@ -258,10 +495,22 @@
       "id": "shogun",
       "name": "Shogun: Page Builder",
       "category": "Page Builders",
-      "domainPatterns": ["cdn.getshogun.com", "getshogun.com"],
-      "inlinePatterns": ["shogunCustomStyles", "shogunSettings"],
-      "snippetPatterns": ["shogun-head.liquid", "snippets/shogun"],
-      "liquidPatterns": ["render\\s+['\"]shogun", "include\\s+['\"]shogun"],
+      "domainPatterns": [
+        "cdn.getshogun.com",
+        "getshogun.com"
+      ],
+      "inlinePatterns": [
+        "shogunCustomStyles",
+        "shogunSettings"
+      ],
+      "snippetPatterns": [
+        "shogun-head.liquid",
+        "snippets/shogun"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]shogun",
+        "include\\s+['\"]shogun"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 260,
       "avgDelayMs": 490,
@@ -272,10 +521,22 @@
       "id": "gempages",
       "name": "GemPages: Page Builder",
       "category": "Page Builders",
-      "domainPatterns": ["gempages.net", "cdn.gempages.net"],
-      "inlinePatterns": ["GEM_PAGES", "gempagesGlobal"],
-      "snippetPatterns": ["gp-header.liquid", "snippets/gem-pages"],
-      "liquidPatterns": ["render\\s+['\"]gp-header", "include\\s+['\"]gp-header"],
+      "domainPatterns": [
+        "gempages.net",
+        "cdn.gempages.net"
+      ],
+      "inlinePatterns": [
+        "GEM_PAGES",
+        "gempagesGlobal"
+      ],
+      "snippetPatterns": [
+        "gp-header.liquid",
+        "snippets/gem-pages"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]gp-header",
+        "include\\s+['\"]gp-header"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 270,
       "avgDelayMs": 500,
@@ -286,10 +547,22 @@
       "id": "triplewhale",
       "name": "Triple Whale: Attribution Pixel",
       "category": "Analytics & Attribution",
-      "domainPatterns": ["triplewhale-pixel.run", "api.triplewhale.com"],
-      "inlinePatterns": ["triplewhale", "window.triplewhale"],
-      "snippetPatterns": ["triplewhale.liquid", "snippets/triple-whale"],
-      "liquidPatterns": ["render\\s+['\"]triplewhale", "include\\s+['\"]triplewhale"],
+      "domainPatterns": [
+        "triplewhale-pixel.run",
+        "api.triplewhale.com"
+      ],
+      "inlinePatterns": [
+        "triplewhale",
+        "window.triplewhale"
+      ],
+      "snippetPatterns": [
+        "triplewhale.liquid",
+        "snippets/triple-whale"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]triplewhale",
+        "include\\s+['\"]triplewhale"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 115,
       "avgDelayMs": 220,
@@ -300,10 +573,22 @@
       "id": "okendo",
       "name": "Okendo: Product Reviews",
       "category": "Reviews & Social Proof",
-      "domainPatterns": ["cdn.okendo.io", "okendo.io"],
-      "inlinePatterns": ["okendoWidget", "okeReviews"],
-      "snippetPatterns": ["okendo-reviews-json-ld.liquid", "okendo-reviews-widget.liquid"],
-      "liquidPatterns": ["render\\s+['\"]okendo", "include\\s+['\"]okendo"],
+      "domainPatterns": [
+        "cdn.okendo.io",
+        "okendo.io"
+      ],
+      "inlinePatterns": [
+        "okendoWidget",
+        "okeReviews"
+      ],
+      "snippetPatterns": [
+        "okendo-reviews-json-ld.liquid",
+        "okendo-reviews-widget.liquid"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]okendo",
+        "include\\s+['\"]okendo"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 190,
       "avgDelayMs": 360,
@@ -314,10 +599,22 @@
       "id": "stamped",
       "name": "Stamped.io: Reviews & Loyalty",
       "category": "Reviews & Social Proof",
-      "domainPatterns": ["cdn.stamped.io", "stamped.io"],
-      "inlinePatterns": ["StampedFn", "stamped-rewards"],
-      "snippetPatterns": ["stamped-rewards-init.liquid", "snippets/stamped"],
-      "liquidPatterns": ["render\\s+['\"]stamped", "include\\s+['\"]stamped"],
+      "domainPatterns": [
+        "cdn.stamped.io",
+        "stamped.io"
+      ],
+      "inlinePatterns": [
+        "StampedFn",
+        "stamped-rewards"
+      ],
+      "snippetPatterns": [
+        "stamped-rewards-init.liquid",
+        "snippets/stamped"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]stamped",
+        "include\\s+['\"]stamped"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 180,
       "avgDelayMs": 340,
@@ -328,10 +625,22 @@
       "id": "attentive",
       "name": "Attentive: SMS Marketing",
       "category": "Email & SMS Marketing",
-      "domainPatterns": ["cdn.attn.tv", "attentivemobile.com"],
-      "inlinePatterns": ["window.__attentive", "attn_tag"],
-      "snippetPatterns": ["attentive.liquid", "snippets/attentive"],
-      "liquidPatterns": ["render\\s+['\"]attentive", "include\\s+['\"]attentive"],
+      "domainPatterns": [
+        "cdn.attn.tv",
+        "attentivemobile.com"
+      ],
+      "inlinePatterns": [
+        "window.__attentive",
+        "attn_tag"
+      ],
+      "snippetPatterns": [
+        "attentive.liquid",
+        "snippets/attentive"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]attentive",
+        "include\\s+['\"]attentive"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 165,
       "avgDelayMs": 300,
@@ -342,10 +651,22 @@
       "id": "postscript",
       "name": "Postscript: SMS Marketing",
       "category": "Email & SMS Marketing",
-      "domainPatterns": ["sdk.postscript.io", "postscript.io"],
-      "inlinePatterns": ["postscript_shop_id", "postscript_subscriber"],
-      "snippetPatterns": ["postscript-sdk.liquid", "snippets/postscript"],
-      "liquidPatterns": ["render\\s+['\"]postscript", "include\\s+['\"]postscript"],
+      "domainPatterns": [
+        "sdk.postscript.io",
+        "postscript.io"
+      ],
+      "inlinePatterns": [
+        "postscript_shop_id",
+        "postscript_subscriber"
+      ],
+      "snippetPatterns": [
+        "postscript-sdk.liquid",
+        "snippets/postscript"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]postscript",
+        "include\\s+['\"]postscript"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 125,
       "avgDelayMs": 230,
@@ -356,10 +677,22 @@
       "id": "smsbump",
       "name": "SMSBump (Yotpo SMS)",
       "category": "Email & SMS Marketing",
-      "domainPatterns": ["smsbump.com", "cdn.smsbump.com"],
-      "inlinePatterns": ["smsbumpTracking", "smsbump_subscription"],
-      "snippetPatterns": ["smsbump.liquid", "snippets/smsbump"],
-      "liquidPatterns": ["render\\s+['\"]smsbump", "include\\s+['\"]smsbump"],
+      "domainPatterns": [
+        "smsbump.com",
+        "cdn.smsbump.com"
+      ],
+      "inlinePatterns": [
+        "smsbumpTracking",
+        "smsbump_subscription"
+      ],
+      "snippetPatterns": [
+        "smsbump.liquid",
+        "snippets/smsbump"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]smsbump",
+        "include\\s+['\"]smsbump"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 130,
       "avgDelayMs": 240,
@@ -370,10 +703,23 @@
       "id": "crazyegg",
       "name": "Crazy Egg: Click Heatmaps",
       "category": "Analytics & Heatmaps",
-      "domainPatterns": ["script.crazyegg.com", "crazyegg.com"],
-      "inlinePatterns": ["script.crazyegg.com", "CE2_loaded", "window.CE2"],
-      "snippetPatterns": ["crazyegg.liquid", "snippets/crazyegg"],
-      "liquidPatterns": ["render\\s+['\"]crazyegg", "include\\s+['\"]crazyegg"],
+      "domainPatterns": [
+        "script.crazyegg.com",
+        "crazyegg.com"
+      ],
+      "inlinePatterns": [
+        "script.crazyegg.com",
+        "CE2_loaded",
+        "window.CE2"
+      ],
+      "snippetPatterns": [
+        "crazyegg.liquid",
+        "snippets/crazyegg"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]crazyegg",
+        "include\\s+['\"]crazyegg"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 170,
       "avgDelayMs": 360,
@@ -384,10 +730,22 @@
       "id": "intercom",
       "name": "Intercom: Live Chat & Help",
       "category": "Customer Support & Chat",
-      "domainPatterns": ["widget.intercom.io", "js.intercomcdn.com"],
-      "inlinePatterns": ["Intercom\\(", "intercomSettings"],
-      "snippetPatterns": ["intercom.liquid", "snippets/intercom"],
-      "liquidPatterns": ["render\\s+['\"]intercom", "include\\s+['\"]intercom"],
+      "domainPatterns": [
+        "widget.intercom.io",
+        "js.intercomcdn.com"
+      ],
+      "inlinePatterns": [
+        "Intercom\\(",
+        "intercomSettings"
+      ],
+      "snippetPatterns": [
+        "intercom.liquid",
+        "snippets/intercom"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]intercom",
+        "include\\s+['\"]intercom"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 310,
       "avgDelayMs": 590,
@@ -398,10 +756,23 @@
       "id": "elevar",
       "name": "Elevar: Server-Side Tracking",
       "category": "Analytics & Attribution",
-      "domainPatterns": ["elevar.com", "shopify-gtm.getelevar.com"],
-      "inlinePatterns": ["ElevarGtm", "elevarTracking"],
-      "snippetPatterns": ["elevar-head.liquid", "elevar-body-end.liquid", "snippets/elevar"],
-      "liquidPatterns": ["render\\s+['\"]elevar", "include\\s+['\"]elevar"],
+      "domainPatterns": [
+        "elevar.com",
+        "shopify-gtm.getelevar.com"
+      ],
+      "inlinePatterns": [
+        "ElevarGtm",
+        "elevarTracking"
+      ],
+      "snippetPatterns": [
+        "elevar-head.liquid",
+        "elevar-body-end.liquid",
+        "snippets/elevar"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]elevar",
+        "include\\s+['\"]elevar"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 110,
       "avgDelayMs": 190,
@@ -412,10 +783,22 @@
       "id": "alireviews",
       "name": "AliReviews: AliExpress Reviews",
       "category": "Reviews & Social Proof",
-      "domainPatterns": ["alireviews.io", "fireapps.vn"],
-      "inlinePatterns": ["alireviews", "alireviews_settings"],
-      "snippetPatterns": ["alireviews_core.liquid", "snippets/alireviews"],
-      "liquidPatterns": ["render\\s+['\"]alireviews", "include\\s+['\"]alireviews"],
+      "domainPatterns": [
+        "alireviews.io",
+        "fireapps.vn"
+      ],
+      "inlinePatterns": [
+        "alireviews",
+        "alireviews_settings"
+      ],
+      "snippetPatterns": [
+        "alireviews_core.liquid",
+        "snippets/alireviews"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]alireviews",
+        "include\\s+['\"]alireviews"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 195,
       "avgDelayMs": 370,
@@ -426,10 +809,22 @@
       "id": "bold_upsell",
       "name": "Bold Upsell & Cross-Sell",
       "category": "Upsells & Bundles",
-      "domainPatterns": ["boldapps.com/upsell", "upsell.boldapps.com"],
-      "inlinePatterns": ["BOLD.upsell", "bold_upsell_modal"],
-      "snippetPatterns": ["bold-upsell.liquid", "snippets/bold-upsell"],
-      "liquidPatterns": ["render\\s+['\"]bold-upsell", "include\\s+['\"]bold-upsell"],
+      "domainPatterns": [
+        "boldapps.com/upsell",
+        "upsell.boldapps.com"
+      ],
+      "inlinePatterns": [
+        "BOLD.upsell",
+        "bold_upsell_modal"
+      ],
+      "snippetPatterns": [
+        "bold-upsell.liquid",
+        "snippets/bold-upsell"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]bold-upsell",
+        "include\\s+['\"]bold-upsell"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 135,
       "avgDelayMs": 230,
@@ -440,10 +835,22 @@
       "id": "skio",
       "name": "Skio: Subscriptions",
       "category": "Subscriptions",
-      "domainPatterns": ["skio.com", "cdn.skio.com"],
-      "inlinePatterns": ["skioConfig", "skioPlan"],
-      "snippetPatterns": ["skio-plan-picker.liquid", "snippets/skio"],
-      "liquidPatterns": ["render\\s+['\"]skio", "include\\s+['\"]skio"],
+      "domainPatterns": [
+        "skio.com",
+        "cdn.skio.com"
+      ],
+      "inlinePatterns": [
+        "skioConfig",
+        "skioPlan"
+      ],
+      "snippetPatterns": [
+        "skio-plan-picker.liquid",
+        "snippets/skio"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]skio",
+        "include\\s+['\"]skio"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 120,
       "avgDelayMs": 210,
@@ -454,10 +861,22 @@
       "id": "smartrr",
       "name": "Smartrr: Subscriptions & Loyalty",
       "category": "Subscriptions",
-      "domainPatterns": ["smartrr.com", "cdn.smartrr.com"],
-      "inlinePatterns": ["smartrrConfig", "smartrrSettings"],
-      "snippetPatterns": ["smartrr-product.liquid", "snippets/smartrr"],
-      "liquidPatterns": ["render\\s+['\"]smartrr", "include\\s+['\"]smartrr"],
+      "domainPatterns": [
+        "smartrr.com",
+        "cdn.smartrr.com"
+      ],
+      "inlinePatterns": [
+        "smartrrConfig",
+        "smartrrSettings"
+      ],
+      "snippetPatterns": [
+        "smartrr-product.liquid",
+        "snippets/smartrr"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]smartrr",
+        "include\\s+['\"]smartrr"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 130,
       "avgDelayMs": 220,
@@ -468,10 +887,22 @@
       "id": "tiktok_pixel",
       "name": "TikTok Pixel Tracking",
       "category": "Ad Tracking & Pixels",
-      "domainPatterns": ["analytics.tiktok.com"],
-      "inlinePatterns": ["ttq.load", "ttq.page", "ttq.track"],
-      "snippetPatterns": ["tiktok-pixel.liquid", "snippets/tiktok"],
-      "liquidPatterns": ["render\\s+['\"]tiktok", "include\\s+['\"]tiktok"],
+      "domainPatterns": [
+        "analytics.tiktok.com"
+      ],
+      "inlinePatterns": [
+        "ttq.load",
+        "ttq.page",
+        "ttq.track"
+      ],
+      "snippetPatterns": [
+        "tiktok-pixel.liquid",
+        "snippets/tiktok"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]tiktok",
+        "include\\s+['\"]tiktok"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 170,
       "avgDelayMs": 330,
@@ -482,10 +913,21 @@
       "id": "meta_pixel",
       "name": "Meta (Facebook) Pixel Legacy Code",
       "category": "Ad Tracking & Pixels",
-      "domainPatterns": ["connect.facebook.net/en_US/fbevents.js"],
-      "inlinePatterns": ["fbq\\('init'", "fbq\\('track'"],
-      "snippetPatterns": ["facebook-pixel.liquid", "snippets/facebook"],
-      "liquidPatterns": ["render\\s+['\"]facebook", "include\\s+['\"]facebook"],
+      "domainPatterns": [
+        "connect.facebook.net/en_US/fbevents.js"
+      ],
+      "inlinePatterns": [
+        "fbq\\('init'",
+        "fbq\\('track'"
+      ],
+      "snippetPatterns": [
+        "facebook-pixel.liquid",
+        "snippets/facebook"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]facebook",
+        "include\\s+['\"]facebook"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 160,
       "avgDelayMs": 310,
@@ -496,10 +938,21 @@
       "id": "pinterest_pixel",
       "name": "Pinterest Tag Tracker",
       "category": "Ad Tracking & Pixels",
-      "domainPatterns": ["s.pinimg.com/ct/core.js"],
-      "inlinePatterns": ["pintrk\\('load'", "pintrk\\('page'"],
-      "snippetPatterns": ["pinterest-tag.liquid", "snippets/pinterest"],
-      "liquidPatterns": ["render\\s+['\"]pinterest", "include\\s+['\"]pinterest"],
+      "domainPatterns": [
+        "s.pinimg.com/ct/core.js"
+      ],
+      "inlinePatterns": [
+        "pintrk\\('load'",
+        "pintrk\\('page'"
+      ],
+      "snippetPatterns": [
+        "pinterest-tag.liquid",
+        "snippets/pinterest"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]pinterest",
+        "include\\s+['\"]pinterest"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 120,
       "avgDelayMs": 220,
@@ -510,10 +963,22 @@
       "id": "fera",
       "name": "Fera: Social Proof & Reviews",
       "category": "Reviews & Social Proof",
-      "domainPatterns": ["cdn.fera.ai", "api.fera.ai"],
-      "inlinePatterns": ["ferajs", "feraConfig"],
-      "snippetPatterns": ["fera.liquid", "snippets/fera"],
-      "liquidPatterns": ["render\\s+['\"]fera", "include\\s+['\"]fera"],
+      "domainPatterns": [
+        "cdn.fera.ai",
+        "api.fera.ai"
+      ],
+      "inlinePatterns": [
+        "ferajs",
+        "feraConfig"
+      ],
+      "snippetPatterns": [
+        "fera.liquid",
+        "snippets/fera"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]fera",
+        "include\\s+['\"]fera"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 130,
       "avgDelayMs": 230,
@@ -524,10 +989,22 @@
       "id": "nudgify",
       "name": "Nudgify: Social Proof Popups",
       "category": "Reviews & Social Proof",
-      "domainPatterns": ["nudgify.com", "pixel.nudgify.com"],
-      "inlinePatterns": ["nudgify", "nudgifyPixel"],
-      "snippetPatterns": ["nudgify.liquid", "snippets/nudgify"],
-      "liquidPatterns": ["render\\s+['\"]nudgify", "include\\s+['\"]nudgify"],
+      "domainPatterns": [
+        "nudgify.com",
+        "pixel.nudgify.com"
+      ],
+      "inlinePatterns": [
+        "nudgify",
+        "nudgifyPixel"
+      ],
+      "snippetPatterns": [
+        "nudgify.liquid",
+        "snippets/nudgify"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]nudgify",
+        "include\\s+['\"]nudgify"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 125,
       "avgDelayMs": 220,
@@ -538,10 +1015,22 @@
       "id": "zipify",
       "name": "Zipify Pages & OneClickUpsell",
       "category": "Page Builders & Upsells",
-      "domainPatterns": ["zipify.com", "cdn.zipify.com"],
-      "inlinePatterns": ["ZipifyPages", "zipify_ocu"],
-      "snippetPatterns": ["zipify-pages-head.liquid", "snippets/zipify"],
-      "liquidPatterns": ["render\\s+['\"]zipify", "include\\s+['\"]zipify"],
+      "domainPatterns": [
+        "zipify.com",
+        "cdn.zipify.com"
+      ],
+      "inlinePatterns": [
+        "ZipifyPages",
+        "zipify_ocu"
+      ],
+      "snippetPatterns": [
+        "zipify-pages-head.liquid",
+        "snippets/zipify"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]zipify",
+        "include\\s+['\"]zipify"
+      ],
       "speedPenalty": "High",
       "avgSizeKB": 210,
       "avgDelayMs": 400,
@@ -552,15 +1041,359 @@
       "id": "candyrack",
       "name": "Candy Rack: One Click Upsell",
       "category": "Upsells & Bundles",
-      "domainPatterns": ["candyrack.digismoothie.com", "digismoothie.com"],
-      "inlinePatterns": ["CandyRack", "candy_rack_config"],
-      "snippetPatterns": ["candyrack.liquid", "snippets/candyrack"],
-      "liquidPatterns": ["render\\s+['\"]candyrack", "include\\s+['\"]candyrack"],
+      "domainPatterns": [
+        "candyrack.digismoothie.com",
+        "digismoothie.com"
+      ],
+      "inlinePatterns": [
+        "CandyRack",
+        "candy_rack_config"
+      ],
+      "snippetPatterns": [
+        "candyrack.liquid",
+        "snippets/candyrack"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]candyrack",
+        "include\\s+['\"]candyrack"
+      ],
       "speedPenalty": "Medium",
       "avgSizeKB": 135,
       "avgDelayMs": 240,
       "description": "Candy Rack popup upsell modal scripts and product trigger hooks.",
       "cleanupAdvice": "Remove candyrack script tags and snippets."
+    },
+    {
+      "id": "smile_io",
+      "name": "Smile.io: Loyalty & Rewards",
+      "category": "Loyalty & Rewards",
+      "domainPatterns": [
+        "smile.io",
+        "cdn.smile.io",
+        "smile-shopify.com"
+      ],
+      "inlinePatterns": [
+        "Smile.init",
+        "smile-ui-container",
+        "smile_customer"
+      ],
+      "snippetPatterns": [
+        "smile-initializer.liquid",
+        "smile-points.liquid",
+        "snippets/smile"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]smile",
+        "include\\s+['\"]smile"
+      ],
+      "speedPenalty": "Medium",
+      "avgSizeKB": 145,
+      "avgDelayMs": 240,
+      "description": "Smile.io loads points launcher widgets, popup panels, and reward tracking scripts.",
+      "cleanupAdvice": "Remove {% render 'smile-initializer' %} from layout/theme.liquid and delete snippets/smile-*.liquid."
+    },
+    {
+      "id": "rebuy",
+      "name": "Rebuy: Smart Cart & AI Upsell",
+      "category": "Upsell & Cross-Sell",
+      "domainPatterns": [
+        "rebuyengine.com",
+        "cdn.rebuyengine.com"
+      ],
+      "inlinePatterns": [
+        "Rebuy.init",
+        "rebuy-smartcart",
+        "rebuy-widget"
+      ],
+      "snippetPatterns": [
+        "rebuy-extensions.liquid",
+        "rebuy-cart-template.liquid",
+        "snippets/rebuy"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]rebuy",
+        "include\\s+['\"]rebuy"
+      ],
+      "speedPenalty": "High",
+      "avgSizeKB": 190,
+      "avgDelayMs": 310,
+      "description": "Rebuy executes dynamic smart cart drawer widgets, upsell carousel observers, and tracking scripts.",
+      "cleanupAdvice": "Remove {% render 'rebuy-extensions' %} from layout/theme.liquid and delete snippets/rebuy-*.liquid."
+    },
+    {
+      "id": "vitals",
+      "name": "Vitals: All-in-One Marketing (40+ Apps)",
+      "category": "All-in-One Optimization",
+      "domainPatterns": [
+        "vitals.app",
+        "cdn.vitals.app",
+        "vitals-cdn.com"
+      ],
+      "inlinePatterns": [
+        "Vitals.init",
+        "vitals-reviews",
+        "vitals-wheel"
+      ],
+      "snippetPatterns": [
+        "vitals-loader.liquid",
+        "vitals-script.liquid",
+        "snippets/vitals"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]vitals",
+        "include\\s+['\"]vitals"
+      ],
+      "speedPenalty": "High",
+      "avgSizeKB": 260,
+      "avgDelayMs": 420,
+      "description": "Vitals injects a large JavaScript bundle containing multiple background widgets, popups, and currency converters.",
+      "cleanupAdvice": "Remove {% render 'vitals-loader' %} from layout/theme.liquid and delete snippets/vitals-*.liquid."
+    },
+    {
+      "id": "growave",
+      "name": "Growave: Loyalty, Wishlist & Reviews",
+      "category": "Loyalty & Reviews",
+      "domainPatterns": [
+        "growave.io",
+        "static.growave.io"
+      ],
+      "inlinePatterns": [
+        "growaveInit",
+        "ssw-widget",
+        "gw-wishlist"
+      ],
+      "snippetPatterns": [
+        "socialshopwave-widget-auth.liquid",
+        "ssw-helpers.liquid",
+        "snippets/ssw"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]socialshopwave",
+        "include\\s+['\"]socialshopwave"
+      ],
+      "speedPenalty": "High",
+      "avgSizeKB": 210,
+      "avgDelayMs": 350,
+      "description": "Growave executes heavy social login widgets, wishlist DOM listeners, and loyalty point trackers.",
+      "cleanupAdvice": "Remove {% render 'socialshopwave-widget-auth' %} and {% include 'ssw-helpers' %} from layout/theme.liquid."
+    },
+    {
+      "id": "shopify_inbox",
+      "name": "Shopify Inbox: Live Chat",
+      "category": "Customer Support & Live Chat",
+      "domainPatterns": [
+        "inbox.shopifycdn.com",
+        "chat.shopify.com"
+      ],
+      "inlinePatterns": [
+        "ShopifyChat",
+        "inbox-chat-button",
+        "inbox-online-store"
+      ],
+      "snippetPatterns": [
+        "shopify-chat.liquid",
+        "snippets/shopify-inbox"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]shopify-chat",
+        "include\\s+['\"]shopify-chat"
+      ],
+      "speedPenalty": "Medium",
+      "avgSizeKB": 130,
+      "avgDelayMs": 190,
+      "description": "Shopify Inbox loads real-time customer messaging iframes and chat launcher bubble scripts.",
+      "cleanupAdvice": "Remove {% render 'shopify-chat' %} or disable the Shopify Inbox App Embed in Theme Customizer."
+    },
+    {
+      "id": "yotpo_loyalty",
+      "name": "Yotpo Loyalty & Referrals (Swell)",
+      "category": "Loyalty & Rewards",
+      "domainPatterns": [
+        "swellrewards.com",
+        "cdn.swellrewards.com"
+      ],
+      "inlinePatterns": [
+        "spapi",
+        "swell-popup",
+        "swell-holder"
+      ],
+      "snippetPatterns": [
+        "swell-rewards.liquid",
+        "swell-post-checkout.liquid",
+        "snippets/swell"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]swell",
+        "include\\s+['\"]swell"
+      ],
+      "speedPenalty": "Medium",
+      "avgSizeKB": 150,
+      "avgDelayMs": 230,
+      "description": "Swell Rewards executes VIP referral tracking, customer credit calculators, and popup modals.",
+      "cleanupAdvice": "Remove {% render 'swell-rewards' %} from layout/theme.liquid and delete snippets/swell-*.liquid."
+    },
+    {
+      "id": "booster_speed",
+      "name": "Booster: Page Speed Optimizer",
+      "category": "Speed Optimization",
+      "domainPatterns": [
+        "boosterapps.com",
+        "cdn.boosterapps.com"
+      ],
+      "inlinePatterns": [
+        "boosterApps",
+        "ba-page-speed",
+        "instant-page-booster"
+      ],
+      "snippetPatterns": [
+        "booster-apps-common.liquid",
+        "booster-page-speed.liquid",
+        "snippets/booster"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]booster",
+        "include\\s+['\"]booster"
+      ],
+      "speedPenalty": "Medium",
+      "avgSizeKB": 110,
+      "avgDelayMs": 180,
+      "description": "Booster injects prefetching libraries and preconnect observers across storefront navigation links.",
+      "cleanupAdvice": "Remove {% render 'booster-page-speed' %} from layout/theme.liquid and delete snippets/booster-*.liquid."
+    },
+    {
+      "id": "avada_seo",
+      "name": "Avada SEO Suite & Speed Optimizer",
+      "category": "SEO & Performance",
+      "domainPatterns": [
+        "avada.io",
+        "cdn.avada.io"
+      ],
+      "inlinePatterns": [
+        "avadaSeo",
+        "avada-speed",
+        "avada-structured-data"
+      ],
+      "snippetPatterns": [
+        "avada-seo.liquid",
+        "avada-seo-social.liquid",
+        "snippets/avada-seo"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]avada-seo",
+        "include\\s+['\"]avada-seo"
+      ],
+      "speedPenalty": "Medium",
+      "avgSizeKB": 125,
+      "avgDelayMs": 200,
+      "description": "Avada SEO injects JSON-LD structured data generators, instant page prefetchers, and image lazy loaders.",
+      "cleanupAdvice": "Remove {% render 'avada-seo' %} from layout/theme.liquid and delete snippets/avada-seo*.liquid."
+    },
+    {
+      "id": "plugin_seo",
+      "name": "Plug in SEO: On-page SEO Auditor",
+      "category": "SEO & Performance",
+      "domainPatterns": [
+        "pluginseo.com",
+        "cdn.pluginseo.com"
+      ],
+      "inlinePatterns": [
+        "pluginSeo",
+        "plugin-seo-meta"
+      ],
+      "snippetPatterns": [
+        "pluginseo.liquid",
+        "pluginseo-meta.liquid",
+        "snippets/pluginseo"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]pluginseo",
+        "include\\s+['\"]pluginseo"
+      ],
+      "speedPenalty": "Low",
+      "avgSizeKB": 85,
+      "avgDelayMs": 130,
+      "description": "Plug in SEO generates dynamic meta tag snippets, schema microdata, and SEO diagnostics.",
+      "cleanupAdvice": "Remove {% render 'pluginseo' %} from layout/theme.liquid and delete snippets/pluginseo-*.liquid."
+    },
+    {
+      "id": "seguno",
+      "name": "Seguno: Email Marketing",
+      "category": "Email & SMS Marketing",
+      "domainPatterns": [
+        "seguno.com",
+        "cdn.seguno.com"
+      ],
+      "inlinePatterns": [
+        "seguno_script",
+        "seguno-banner",
+        "seguno-onsite"
+      ],
+      "snippetPatterns": [
+        "seguno.liquid",
+        "snippets/seguno"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]seguno",
+        "include\\s+['\"]seguno"
+      ],
+      "speedPenalty": "Medium",
+      "avgSizeKB": 120,
+      "avgDelayMs": 190,
+      "description": "Seguno loads subscriber popup forms, banner alerts, and newsletter capture scripts.",
+      "cleanupAdvice": "Remove {% render 'seguno' %} from layout/theme.liquid and delete snippets/seguno.liquid."
+    },
+    {
+      "id": "crush_pics",
+      "name": "Crush.pics: Image Optimizer",
+      "category": "Speed Optimization",
+      "domainPatterns": [
+        "crush.pics",
+        "cdn.crush.pics"
+      ],
+      "inlinePatterns": [
+        "crushPics",
+        "crush-lazyload"
+      ],
+      "snippetPatterns": [
+        "crush.pics.liquid",
+        "snippets/crush.pics"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]crush.pics",
+        "include\\s+['\"]crush.pics"
+      ],
+      "speedPenalty": "Low",
+      "avgSizeKB": 75,
+      "avgDelayMs": 110,
+      "description": "Crush.pics injects image compression placeholders and automated responsive image loaders.",
+      "cleanupAdvice": "Remove {% render 'crush.pics' %} from layout/theme.liquid and delete snippets/crush.pics.liquid."
+    },
+    {
+      "id": "pushowl",
+      "name": "PushOwl: Web Push Notifications",
+      "category": "Push Notifications & Marketing",
+      "domainPatterns": [
+        "pushowl.com",
+        "cdn.pushowl.com"
+      ],
+      "inlinePatterns": [
+        "pushowl",
+        "pushowl-widget",
+        "pushowlSettings"
+      ],
+      "snippetPatterns": [
+        "pushowl-widget.liquid",
+        "snippets/pushowl"
+      ],
+      "liquidPatterns": [
+        "render\\s+['\"]pushowl",
+        "include\\s+['\"]pushowl"
+      ],
+      "speedPenalty": "Medium",
+      "avgSizeKB": 135,
+      "avgDelayMs": 210,
+      "description": "PushOwl registers browser service workers and executes opt-in push prompt dialogs.",
+      "cleanupAdvice": "Remove {% render 'pushowl-widget' %} from layout/theme.liquid and delete snippets/pushowl-*.liquid."
     }
   ]
 }
