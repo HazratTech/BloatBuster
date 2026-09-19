@@ -435,6 +435,132 @@ async function duplicateThemeBackup(shop, accessToken, themeId, originalName = '
   return { id: `backup-${Date.now()}`, name: backupName, role: 'unpublished' };
 }
 
+/**
+ * Create an App Subscription on Shopify with Smart Production vs Test Detection:
+ * - Real merchant stores receive live production billing (test: false) -> Real money collected.
+ * - Testers, development stores, and app reviewers receive test billing (test: true) -> No card charged.
+ * - Auto-fallback: If live billing fails because the store is a dev/test store, it automatically retries with test: true.
+ */
+async function createAppSubscription({ shop, accessToken, returnUrl }) {
+  const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const testShops = (process.env.TEST_SHOPS || 'relayworks-fjnfcwjl.myshopify.com')
+    .toLowerCase()
+    .split(',')
+    .map(s => s.trim().replace(/^https?:\/\//, '').replace(/\/$/, ''));
+
+  // 1. Determine if this store should receive test billing
+  let isTest = false;
+
+  if (process.env.SHOPIFY_BILLING_FORCE_TEST === 'true') {
+    isTest = true;
+    console.log(`[BloatBuster Billing] SHOPIFY_BILLING_FORCE_TEST=true -> using test: true`);
+  } else if (process.env.SHOPIFY_BILLING_FORCE_LIVE === 'true') {
+    isTest = false;
+    console.log(`[BloatBuster Billing] SHOPIFY_BILLING_FORCE_LIVE=true -> using test: false`);
+  } else if (testShops.includes(cleanShop.toLowerCase())) {
+    isTest = true;
+    console.log(`[BloatBuster Billing] Store ${cleanShop} is in TEST_SHOPS list -> using test: true`);
+  } else {
+    // Check if store is a partner development store via GraphQL plan query
+    try {
+      const planRes = await fetch(`https://${cleanShop}/admin/api/2025-01/graphql.json`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': accessToken
+        },
+        body: JSON.stringify({
+          query: `query { shop { plan { partnerDevelopment displayName } } }`
+        })
+      });
+      const planData = await planRes.json();
+      const plan = planData?.data?.shop?.plan;
+      if (plan?.partnerDevelopment === true) {
+        isTest = true;
+        console.log(`[BloatBuster Billing] Store ${cleanShop} identified as Partner Development store -> using test: true`);
+      } else if (plan) {
+        isTest = false;
+        console.log(`[BloatBuster Billing] Store ${cleanShop} identified as Real Merchant (${plan.displayName || 'Live Plan'}) -> using REAL PRODUCTION billing (test: false)`);
+      }
+    } catch (planErr) {
+      console.warn(`[BloatBuster Billing] Could not query shop plan for ${cleanShop}:`, planErr.message);
+    }
+  }
+
+  async function executeMutation(useTest) {
+    const graphqlQuery = {
+      query: `
+        mutation AppSubscriptionCreate($name: String!, $returnUrl: URL!, $trialDays: Int, $test: Boolean, $lineItems: [AppSubscriptionLineItemInput!]!) {
+          appSubscriptionCreate(name: $name, returnUrl: $returnUrl, trialDays: $trialDays, test: $test, lineItems: $lineItems) {
+            userErrors {
+              field
+              message
+            }
+            confirmationUrl
+            appSubscription {
+              id
+              status
+              test
+            }
+          }
+        }
+      `,
+      variables: {
+        name: "BloatBuster Pro: Automated Theme Cleaner",
+        returnUrl,
+        trialDays: 7,
+        test: useTest,
+        lineItems: [
+          {
+            plan: {
+              appRecurringPricingDetails: {
+                price: { amount: 19.00, currencyCode: "USD" },
+                interval: "EVERY_30_DAYS"
+              }
+            }
+          }
+        ]
+      }
+    };
+
+    const res = await fetch(`https://${cleanShop}/admin/api/2025-01/graphql.json`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': accessToken
+      },
+      body: JSON.stringify(graphqlQuery)
+    });
+
+    const data = await res.json();
+    return { httpStatus: res.status, data };
+  }
+
+  console.log(`[BloatBuster Billing] Initiating subscription creation for ${cleanShop} with test=${isTest}`);
+  let response = await executeMutation(isTest);
+
+  // Auto-fallback: If live billing (test: false) fails because the store is a dev/test store, retry with test: true
+  const subResult = response?.data?.data?.appSubscriptionCreate;
+  const userErr = subResult?.userErrors?.[0]?.message || '';
+
+  if (!isTest && userErr) {
+    const isDevStoreErr = /test|development|cannot accept|upgrade/i.test(userErr);
+    if (isDevStoreErr) {
+      console.warn(`[BloatBuster Billing] Live billing rejected for ${cleanShop} ("${userErr}"). Auto-retrying with test: true...`);
+      isTest = true;
+      response = await executeMutation(true);
+    }
+  }
+
+  return {
+    httpStatus: response.httpStatus,
+    data: response.data,
+    isTest,
+    confirmationUrl: response.data?.data?.appSubscriptionCreate?.confirmationUrl || null,
+    userErrors: response.data?.data?.appSubscriptionCreate?.userErrors || []
+  };
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname;
@@ -551,48 +677,18 @@ const server = http.createServer(async (req, res) => {
             const proto = req.headers['x-forwarded-proto'] || 'https';
             const returnUrl = `${proto}://${host}/api/billing/confirm?shop=${shop}`;
 
-            const gqlResponse = await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Shopify-Access-Token': tokenData.access_token
-              },
-              body: JSON.stringify({
-                query: `
-                  mutation AppSubscriptionCreate($name: String!, $returnUrl: URL!, $trialDays: Int, $test: Boolean, $lineItems: [AppSubscriptionLineItemInput!]!) {
-                    appSubscriptionCreate(name: $name, returnUrl: $returnUrl, trialDays: $trialDays, test: $test, lineItems: $lineItems) {
-                      userErrors { field message }
-                      confirmationUrl
-                      appSubscription { id status }
-                    }
-                  }
-                `,
-                variables: {
-                  name: "BloatBuster Pro: Automated Theme Cleaner",
-                  returnUrl,
-                  trialDays: 7,
-                  test: process.env.SHOPIFY_BILLING_TEST === 'false' ? false : true,
-                  lineItems: [
-                    {
-                      plan: {
-                        appRecurringPricingDetails: {
-                          price: { amount: 19.00, currencyCode: "USD" },
-                          interval: "EVERY_30_DAYS"
-                        }
-                      }
-                    }
-                  ]
-                }
-              })
+            const subResult = await createAppSubscription({
+              shop,
+              accessToken: tokenData.access_token,
+              returnUrl
             });
 
-            const gqlData = await gqlResponse.json();
-            const subResult = gqlData?.data?.appSubscriptionCreate;
-            if (subResult?.confirmationUrl) {
+            if (subResult.confirmationUrl) {
+              console.log(`[BloatBuster Billing] Created subscription (test=${subResult.isTest}) for ${shop}: ${subResult.confirmationUrl}`);
               return redirectShopifyAdmin(res, subResult.confirmationUrl, 'Redirecting to Shopify Billing...');
             }
 
-            if (subResult?.userErrors?.length > 0) {
+            if (subResult.userErrors?.length > 0) {
               const err = subResult.userErrors[0].message;
               console.error('[BloatBuster Billing Error in Callback]:', err);
               return redirectShopifyAdmin(res, `https://admin.shopify.com/store/${cleanShop}/apps/${SHOPIFY_API_KEY}?billing_error=${encodeURIComponent(err)}`, 'Returning to BloatBuster...');
@@ -657,55 +753,16 @@ const server = http.createServer(async (req, res) => {
 
       console.log(`[BloatBuster Billing] Calling Shopify GraphQL appSubscriptionCreate for ${cleanShop}`);
 
-      // Execute live GraphQL mutation against Shopify Admin API
-      const graphqlQuery = {
-        query: `
-          mutation AppSubscriptionCreate($name: String!, $returnUrl: URL!, $trialDays: Int, $test: Boolean, $lineItems: [AppSubscriptionLineItemInput!]!) {
-            appSubscriptionCreate(name: $name, returnUrl: $returnUrl, trialDays: $trialDays, test: $test, lineItems: $lineItems) {
-              userErrors {
-                field
-                message
-              }
-              confirmationUrl
-              appSubscription {
-                id
-                status
-              }
-            }
-          }
-        `,
-        variables: {
-          name: "BloatBuster Pro: Automated Theme Cleaner",
-          returnUrl,
-          trialDays: 7,
-          test: process.env.SHOPIFY_BILLING_TEST === 'false' ? false : true,
-          lineItems: [
-            {
-              plan: {
-                appRecurringPricingDetails: {
-                  price: { amount: 19.00, currencyCode: "USD" },
-                  interval: "EVERY_30_DAYS"
-                }
-              }
-            }
-          ]
-        }
-      };
-
-      const gqlResponse = await fetch(`https://${cleanShop}/admin/api/2025-01/graphql.json`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': accessToken
-        },
-        body: JSON.stringify(graphqlQuery)
+      const subResult = await createAppSubscription({
+        shop: cleanShop,
+        accessToken,
+        returnUrl
       });
 
-      const gqlData = await gqlResponse.json();
-      console.log(`[BloatBuster Billing API] Response: status=${gqlResponse.status}`, JSON.stringify(gqlData));
+      console.log(`[BloatBuster Billing API] Response: status=${subResult.httpStatus} (test=${subResult.isTest})`, JSON.stringify(subResult.data));
 
       // If token is invalid or expired, reset session and redirect to OAuth
-      if (gqlResponse.status === 401 || (gqlData.errors && !gqlData.data)) {
+      if (subResult.httpStatus === 401 || (subResult.data?.errors && !subResult.data?.data)) {
         console.warn(`[BloatBuster Billing] Invalid access token for ${cleanShop}. Clearing session and triggering fresh OAuth.`);
         saveSession(cleanShop, { accessToken: null });
         const redirectUri = encodeURIComponent(`${proto}://${host}/auth/callback`);
@@ -714,27 +771,26 @@ const server = http.createServer(async (req, res) => {
           success: true,
           needsAuth: true,
           confirmationUrl: authUrl,
-          debugError: gqlData?.errors || `HTTP status ${gqlResponse.status}`
+          debugError: subResult.data?.errors || `HTTP status ${subResult.httpStatus}`
         });
       }
 
-      const subscriptionResult = gqlData?.data?.appSubscriptionCreate;
-
-      if (subscriptionResult?.userErrors?.length > 0) {
-        const userErr = subscriptionResult.userErrors[0].message;
+      if (subResult.userErrors?.length > 0) {
+        const userErr = subResult.userErrors[0].message;
         console.error('Billing user error:', userErr);
         return sendJson(res, 400, { error: userErr });
       }
 
-      if (subscriptionResult?.confirmationUrl) {
-        console.log(`[BloatBuster Billing] Generated confirmationUrl: ${subscriptionResult.confirmationUrl}`);
+      if (subResult.confirmationUrl) {
+        console.log(`[BloatBuster Billing] Generated confirmationUrl (test=${subResult.isTest}): ${subResult.confirmationUrl}`);
         return sendJson(res, 200, {
           success: true,
-          confirmationUrl: subscriptionResult.confirmationUrl
+          isTest: subResult.isTest,
+          confirmationUrl: subResult.confirmationUrl
         });
       }
 
-      const fallbackErr = gqlData?.errors?.[0]?.message || 'Shopify did not return a subscription confirmation URL.';
+      const fallbackErr = subResult.data?.errors?.[0]?.message || 'Shopify did not return a subscription confirmation URL.';
       console.error('[BloatBuster Billing Error]:', fallbackErr);
       return sendJson(res, 400, { error: fallbackErr });
     }
