@@ -35,9 +35,9 @@ if (fs.existsSync(envPath)) {
   });
 }
 
-const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY || 'f3c6dde5474766c85897a2bd2567ea50';
-const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET || '';
-const SCOPES = process.env.SCOPES || 'read_themes,write_themes';
+const SHOPIFY_API_KEY = (process.env.SHOPIFY_API_KEY || 'f3c6dde5474766c85897a2bd2567ea50').trim();
+const SHOPIFY_API_SECRET = (process.env.SHOPIFY_API_SECRET || '').trim();
+const SCOPES = (process.env.SCOPES || 'read_themes,write_themes').trim();
 
 if (!SHOPIFY_API_SECRET) {
   console.warn('[SECURITY NOTICE] SHOPIFY_API_SECRET is not set in process.env.');
@@ -76,13 +76,16 @@ function parseRawBody(req) {
 
 // Verify Shopify Webhook HMAC-SHA256 signature
 function verifyShopifyHmac(rawBody, hmacHeader) {
-  if (!hmacHeader) return false;
+  if (!hmacHeader || !SHOPIFY_API_SECRET) return false;
   try {
     const calculated = crypto
       .createHmac('sha256', SHOPIFY_API_SECRET)
       .update(rawBody)
       .digest('base64');
-    return crypto.timingSafeEqual(Buffer.from(calculated, 'utf8'), Buffer.from(hmacHeader, 'utf8'));
+    const a = Buffer.from(calculated, 'utf8');
+    const b = Buffer.from(hmacHeader.trim(), 'utf8');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
   } catch (err) {
     return false;
   }
