@@ -515,7 +515,7 @@ async function createAppSubscription({ shop, accessToken, returnUrl }) {
         }
       `,
       variables: {
-        name: "BloatBuster Pro: Automated Theme Cleaner",
+        name: "BloatBuster Pro: Automated Theme Cleaner (Early Adopter Special)",
         returnUrl,
         trialDays: trialDays,
         test: useTest,
@@ -523,7 +523,7 @@ async function createAppSubscription({ shop, accessToken, returnUrl }) {
           {
             plan: {
               appRecurringPricingDetails: {
-                price: { amount: 19.00, currencyCode: "USD" },
+                price: { amount: parseFloat(process.env.PLAN_PRICE_USD || '6.99'), currencyCode: "USD" },
                 interval: "EVERY_30_DAYS"
               }
             }
@@ -987,8 +987,10 @@ const server = http.createServer(async (req, res) => {
         trialEndsAt,
         currentPeriodEnd,
         hasUsedTrial,
-        plan: isPro ? 'BloatBuster Pro ($19/mo)' : 'Free Tier',
-        price: '$19 / month',
+        plan: isPro ? 'BloatBuster Pro ($6.99/mo)' : 'Free Tier',
+        price: '$6.99 / month',
+        regularPrice: '$19.00 / month',
+        isEarlyAdopterSpecial: true,
         subscriptionId,
         manageUrl,
         hasToken: Boolean(session?.accessToken),

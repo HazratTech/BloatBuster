@@ -49,7 +49,7 @@ const realCustomerResult = determineBillingMode({
   plan: { partnerDevelopment: false, displayName: 'Shopify Plus' }
 });
 assert.strictEqual(realCustomerResult.isTest, false, 'Real merchant must receive test: false');
-console.log('✓ Test 3: Real merchant customer routed to test: false (Real money $19/mo collected)');
+console.log('✓ Test 3: Real merchant customer routed to test: false (Real money $6.99/mo collected)');
 
 // Test 4: Real merchant without explicit plan metadata defaults to production customer
 const defaultRealCustomerResult = determineBillingMode({
@@ -86,7 +86,7 @@ const returningMerchantTrialDays = determineTrialDays({
   subscriptionStatus: 'CANCELLED'
 });
 assert.strictEqual(returningMerchantTrialDays, 0, 'Merchant who previously used trial must receive 0 trial days');
-console.log('✓ Test 7: Returning merchant receives 0 trial days (Immediate $19/mo charge, no infinite trials)');
+console.log('✓ Test 7: Returning merchant receives 0 trial days (Immediate $6.99/mo charge, no infinite trials)');
 
 // Test 8: Active trial remaining days and expiration calculation
 function calculateTrialStatus(subCreatedAtMs, trialDays, nowMs) {

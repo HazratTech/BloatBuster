@@ -323,7 +323,7 @@ async function initBilling() {
           </div>
           <div class="sub-detail-row">
             <span class="sub-detail-label">Plan Price</span>
-            <span class="sub-detail-val">$19.00 USD / month</span>
+            <span class="sub-detail-val">$6.99 USD / month <span style="color: #8A6100; font-size: 11px; font-weight: 500;">(Launch Lock-In)</span></span>
           </div>
           <div class="sub-detail-row">
             <span class="sub-detail-label">Trial Expiration</span>
@@ -374,7 +374,7 @@ async function initBilling() {
           </div>
           <div class="sub-detail-row">
             <span class="sub-detail-label">Current Plan</span>
-            <span class="sub-detail-val">$19.00 USD / month</span>
+            <span class="sub-detail-val">$6.99 USD / month <span style="color: #007A5C; font-size: 11px; font-weight: 500;">(Grandfathered Rate)</span></span>
           </div>
           <div class="sub-detail-row">
             <span class="sub-detail-label">Billing Cycle</span>
@@ -424,7 +424,7 @@ async function initBilling() {
             </div>
             <div class="sub-detail-row">
               <span class="sub-detail-label">Subscription Plan</span>
-              <span class="sub-detail-val">$19.00 USD / month</span>
+              <span class="sub-detail-val">$6.99 USD / month</span>
             </div>
             <div class="sub-detail-row">
               <span class="sub-detail-label">Trial Status</span>
@@ -437,37 +437,43 @@ async function initBilling() {
           </div>
 
           <button class="btn-primary" id="btnStartTrial" style="width: 100%; justify-content: center; padding: 10px; font-size: 14px;">
-            Subscribe to Pro ($19/mo)
+            Subscribe to Pro ($6.99/mo)
           </button>
         </div>
       `;
     } else {
-      // STATE 1: Eligible New Merchant (Has never used trial)
+      // STATE 1: Eligible New Merchant (Has never used trial - Early Adopter Special)
       if (proModalTitle) proModalTitle.textContent = 'BloatBuster Automated Protection';
       proModalBody.innerHTML = `
         <div style="text-align: center;">
-          <div style="width: 48px; height: 48px; border-radius: var(--p-radius-sm); background: var(--p-color-primary-subdued); color: var(--p-color-primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
-            <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M9.661 2.237a.75.75 0 0 1 .678 0 11.947 11.947 0 0 0 5.078 1.482.75.75 0 0 1 .672.745v4.662a12.052 12.052 0 0 1-4.78 9.69.75.75 0 0 1-.908 0A12.052 12.052 0 0 1 5.61 9.126V4.464a.75.75 0 0 1 .672-.745 11.947 11.947 0 0 0 5.078-1.482Zm-1.84 8.785a.75.75 0 0 0 1.06 1.06l1.625-1.625 2.125 2.125a.75.75 0 1 0 1.06-1.06l-2.655-2.655a.75.75 0 0 0-1.06 0L7.82 11.022Z" clip-rule="evenodd"/>
+          <div class="early-adopter-badge">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="#B98900">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z"/>
             </svg>
+            Early Adopter Launch Special &bull; First 50 Stores
           </div>
+
           <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">Automated 1-Click Theme Purge</h3>
-          <p style="font-size: 13px; color: var(--p-color-text-secondary); margin-bottom: 18px;">
+          <p style="font-size: 13px; color: var(--p-color-text-secondary); margin-bottom: 16px;">
             Safely clean dead scripts without touching theme code manually.
           </p>
 
-          <div style="text-align: left; background: var(--p-color-bg-surface-secondary); border: 1px solid var(--p-color-border-subdued); border-radius: var(--p-radius-sm); padding: 14px 16px; margin-bottom: 18px; font-size: 12.5px; line-height: 1.8;">
+          <div style="text-align: left; background: var(--p-color-bg-surface-secondary); border: 1px solid var(--p-color-border-subdued); border-radius: var(--p-radius-sm); padding: 14px 16px; margin-bottom: 16px; font-size: 12.5px; line-height: 1.8;">
             <div>&bull; <strong>1-Click Theme Duplication:</strong> Automatic safety backup before changes.</div>
             <div>&bull; <strong>Automated Snippet Excision:</strong> Removes dead tags instantly via Theme API.</div>
             <div>&bull; <strong>24/7 Uninstall Watchdog:</strong> Instant alert when an uninstalled app leaves debris.</div>
             <div>&bull; <strong>Continuous Speed Monitoring:</strong> Prevents silent PageSpeed score drops.</div>
           </div>
 
-          <div style="font-size: 26px; font-weight: 800; color: var(--p-color-text); margin-bottom: 2px;">$19 <span style="font-size: 13px; color: var(--p-color-text-subdued); font-weight: 400;">/ month</span></div>
-          <div style="font-size: 12px; color: var(--p-color-primary); font-weight: 600; margin-bottom: 18px;">7-Day Free Trial &bull; Powered by Shopify Native Billing</div>
+          <div style="font-size: 26px; font-weight: 800; color: var(--p-color-text); margin-bottom: 2px;">
+            <span class="price-strikethrough">$19.00</span>$6.99 <span style="font-size: 13px; color: var(--p-color-text-subdued); font-weight: 400;">/ month</span>
+          </div>
+          <div style="font-size: 12px; color: var(--p-color-primary); font-weight: 600; margin-bottom: 18px;">
+            7-Day Free Trial Included &bull; Lock In $6.99/mo Forever
+          </div>
 
           <button class="btn-primary" id="btnStartTrial" style="width: 100%; justify-content: center; padding: 10px; font-size: 14px;">
-            Start 7-Day Free Trial
+            Start 7-Day Free Trial ($6.99/mo)
           </button>
         </div>
       `;
