@@ -183,13 +183,17 @@ function initTabs() {
   });
 }
 
-// 4. Check and Initialize Billing Status
+// 4. Check and Initialize Billing Status (Full Lifecycle: Trial Start, Trial Active, Paid, Manage, Cancel)
 async function initBilling() {
   const params = new URLSearchParams(window.location.search);
   const isSubscribedFromUrl = params.get('plan') === 'pro' || params.get('subscribed') === 'true';
   const banner = document.getElementById('proActiveBanner');
+  const bannerTitle = document.getElementById('proActiveBannerTitle');
+  const bannerBadge = document.getElementById('proActiveBannerBadge');
   const openProBtn = document.getElementById('openProModal');
-  const startTrialBtn = document.getElementById('btnStartTrial');
+  const proModal = document.getElementById('proModal');
+  const proModalTitle = document.getElementById('proModalTitle');
+  const proModalBody = document.getElementById('proModalBody');
   const cleanShop = getCurrentShop();
 
   const billingError = params.get('billing_error');
@@ -205,37 +209,276 @@ async function initBilling() {
     });
   }
 
-  function setProUiActive() {
-    isProUser = true;
-    if (banner) banner.style.display = 'flex';
-    if (openProBtn) {
+  // Helper: format ISO date to readable string
+  function formatDate(isoStr) {
+    if (!isoStr) return 'N/A';
+    try {
+      return new Date(isoStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return isoStr;
+    }
+  }
+
+  let billingData = {
+    isPro: isSubscribedFromUrl,
+    status: isSubscribedFromUrl ? 'ACTIVE' : 'FREE',
+    isTrialActive: false,
+    trialDaysRemaining: 0,
+    trialEndsAt: null,
+    currentPeriodEnd: null,
+    hasUsedTrial: false,
+    manageUrl: `https://admin.shopify.com/store/${cleanShop.replace('.myshopify.com', '')}/settings/billing`
+  };
+
+  try {
+    const res = await fetch(`/api/billing/status?shop=${cleanShop}`);
+    const data = await res.json();
+    billingData = { ...billingData, ...data };
+  } catch (err) {
+    console.warn('Could not verify billing status:', err);
+  }
+
+  isProUser = Boolean(billingData.isPro);
+
+  // 1. Update Header Badge / Button (#openProModal)
+  if (openProBtn) {
+    if (billingData.isTrialActive) {
+      openProBtn.className = 'btn-secondary';
+      openProBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="#008060">
+          <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+        </svg>
+        Pro Trial (${billingData.trialDaysRemaining}d left)
+      `;
+    } else if (billingData.isPro) {
+      openProBtn.className = 'btn-secondary';
       openProBtn.innerHTML = `
         <svg width="14" height="14" viewBox="0 0 20 20" fill="#008060">
           <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
         </svg>
         Pro Plan Active
       `;
+    } else if (billingData.hasUsedTrial) {
+      openProBtn.className = 'btn-secondary';
+      openProBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 2a1 1 0 0 1 .832.445l2.5 3.75a1 1 0 0 1 .168.555v1.25a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V6.75a1 1 0 0 1 .168-.555l2.5-3.75A1 1 0 0 1 10 2Zm-5 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H5Z" clip-rule="evenodd"/>
+        </svg>
+        Reactivate Pro
+      `;
+    } else {
+      openProBtn.className = 'btn-secondary';
+      openProBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 2a1 1 0 0 1 .832.445l2.5 3.75a1 1 0 0 1 .168.555v1.25a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V6.75a1 1 0 0 1 .168-.555l2.5-3.75A1 1 0 0 1 10 2Zm-5 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H5Z" clip-rule="evenodd"/>
+        </svg>
+        Start 7-Day Trial
+      `;
     }
   }
 
-  if (isSubscribedFromUrl) {
-    setProUiActive();
-  }
-
-  // Check live billing status from backend
-  try {
-    const res = await fetch(`/api/billing/status?shop=${cleanShop}`);
-    const data = await res.json();
-    if (data.isPro) {
-      setProUiActive();
+  // 2. Update Context Banner (#proActiveBanner)
+  if (banner) {
+    if (billingData.isTrialActive) {
+      banner.style.display = 'flex';
+      if (bannerTitle) bannerTitle.textContent = 'BloatBuster Pro Trial Active';
+      if (bannerBadge) {
+        bannerBadge.className = 'badge badge-success';
+        bannerBadge.textContent = `Active Free Trial (${billingData.trialDaysRemaining}d left)`;
+      }
+    } else if (billingData.isPro) {
+      banner.style.display = 'flex';
+      if (bannerTitle) bannerTitle.textContent = 'BloatBuster Pro Plan Active';
+      if (bannerBadge) {
+        bannerBadge.className = 'badge badge-success';
+        bannerBadge.textContent = 'Active Subscription';
+      }
+    } else {
+      banner.style.display = 'none';
     }
-  } catch (err) {
-    console.warn('Could not verify billing status:', err);
   }
 
-  // Handle Trial / Subscription Click in Pro Modal
+  // 3. Render Modal Content According to Subscription State
+  if (proModalBody) {
+    if (billingData.isTrialActive) {
+      // STATE 2: Active Free Trial
+      if (proModalTitle) proModalTitle.textContent = 'BloatBuster Pro Subscription';
+      proModalBody.innerHTML = `
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: #E4F8F0; color: #007A5C; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <h3 style="font-size: 18px; font-weight: 700; margin: 0 0 6px;">Pro Trial Active</h3>
+          <p style="font-size: 13px; color: var(--p-color-text-secondary); margin: 0;">
+            Your store is currently enjoying full access to 24/7 Watchdog protection and 1-click theme cleaner.
+          </p>
+        </div>
+
+        <div class="sub-card">
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Subscription Status</span>
+            <span class="sub-badge sub-badge-trial">● Free Trial (${billingData.trialDaysRemaining}d left)</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Plan Price</span>
+            <span class="sub-detail-val">$19.00 USD / month</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Trial Expiration</span>
+            <span class="sub-detail-val">${formatDate(billingData.trialEndsAt)}</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">First Billing Date</span>
+            <span class="sub-detail-val">${formatDate(billingData.trialEndsAt)}</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Billing Engine</span>
+            <span class="sub-detail-val">Shopify Native Recurring</span>
+          </div>
+        </div>
+
+        <div class="sub-actions-row" style="flex-direction: column; gap: 8px; margin-top: 14px;">
+          <button type="button" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px;" onclick="window.openShopifyManageUrl('${billingData.manageUrl}')">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor" style="margin-right: 6px;">
+              <path fill-rule="evenodd" d="M4.25 2A2.25 2.25 0 0 0 2 4.25v11.5A2.25 2.25 0 0 0 4.25 18h11.5A2.25 2.25 0 0 0 18 15.75V10.5a.75.75 0 0 0-1.5 0v5.25a.75.75 0 0 1-.75.75H4.25a.75.75 0 0 1-.75-.75V4.25a.75.75 0 0 1 .75-.75h5.25a.75.75 0 0 0 0-1.5H4.25Zm8.5 0a.75.75 0 0 1 .75.75v3.69l3.72-3.72a.75.75 0 1 1 1.06 1.06l-3.72 3.72h3.69a.75.75 0 0 1 0 1.5H13a.75.75 0 0 1-.75-.75V2.75a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd"/>
+            </svg>
+            Manage in Shopify Admin
+          </button>
+          <button type="button" class="btn-destructive-subtle" style="width: 100%; justify-content: center; padding: 9px;" onclick="window.handleCancelSubscription()">
+            Cancel Subscription
+          </button>
+        </div>
+      `;
+    } else if (billingData.isPro) {
+      // STATE 3: Active Paid Subscription (After trial / Ongoing monthly billing)
+      if (proModalTitle) proModalTitle.textContent = 'BloatBuster Pro Subscription';
+      proModalBody.innerHTML = `
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: #E4F8F0; color: #007A5C; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <h3 style="font-size: 18px; font-weight: 700; margin: 0 0 6px;">BloatBuster Pro Active</h3>
+          <p style="font-size: 13px; color: var(--p-color-text-secondary); margin: 0;">
+            Your live store theme code is continuously monitored and automated 1-click purges are enabled.
+          </p>
+        </div>
+
+        <div class="sub-card">
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Subscription Status</span>
+            <span class="sub-badge sub-badge-active">● Active Subscription</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Current Plan</span>
+            <span class="sub-detail-val">$19.00 USD / month</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Billing Cycle</span>
+            <span class="sub-detail-val">Every 30 Days</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Next Renewal Date</span>
+            <span class="sub-detail-val">${formatDate(billingData.currentPeriodEnd)}</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Theme Watchdog</span>
+            <span class="sub-detail-val" style="color: #008060;">● 24/7 Enabled</span>
+          </div>
+        </div>
+
+        <div class="sub-actions-row" style="flex-direction: column; gap: 8px; margin-top: 14px;">
+          <button type="button" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px;" onclick="window.openShopifyManageUrl('${billingData.manageUrl}')">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor" style="margin-right: 6px;">
+              <path fill-rule="evenodd" d="M4.25 2A2.25 2.25 0 0 0 2 4.25v11.5A2.25 2.25 0 0 0 4.25 18h11.5A2.25 2.25 0 0 0 18 15.75V10.5a.75.75 0 0 0-1.5 0v5.25a.75.75 0 0 1-.75.75H4.25a.75.75 0 0 1-.75-.75V4.25a.75.75 0 0 1 .75-.75h5.25a.75.75 0 0 0 0-1.5H4.25Zm8.5 0a.75.75 0 0 1 .75.75v3.69l3.72-3.72a.75.75 0 1 1 1.06 1.06l-3.72 3.72h3.69a.75.75 0 0 1 0 1.5H13a.75.75 0 0 1-.75-.75V2.75a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd"/>
+            </svg>
+            Manage in Shopify Admin
+          </button>
+          <button type="button" class="btn-destructive-subtle" style="width: 100%; justify-content: center; padding: 9px;" onclick="window.handleCancelSubscription()">
+            Cancel Subscription
+          </button>
+        </div>
+      `;
+    } else if (billingData.hasUsedTrial) {
+      // STATE 4: Returning / Cancelled Merchant (Previously redeemed trial, cannot start trial again)
+      if (proModalTitle) proModalTitle.textContent = 'Reactivate BloatBuster Pro';
+      proModalBody.innerHTML = `
+        <div style="text-align: center;">
+          <div style="width: 48px; height: 48px; border-radius: var(--p-radius-sm); background: var(--p-color-primary-subdued); color: var(--p-color-primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+            <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M9.661 2.237a.75.75 0 0 1 .678 0 11.947 11.947 0 0 0 5.078 1.482.75.75 0 0 1 .672.745v4.662a12.052 12.052 0 0 1-4.78 9.69.75.75 0 0 1-.908 0A12.052 12.052 0 0 1 5.61 9.126V4.464a.75.75 0 0 1 .672-.745 11.947 11.947 0 0 0 5.078-1.482Zm-1.84 8.785a.75.75 0 0 0 1.06 1.06l1.625-1.625 2.125 2.125a.75.75 0 1 0 1.06-1.06l-2.655-2.655a.75.75 0 0 0-1.06 0L7.82 11.022Z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">Reactivate BloatBuster Pro</h3>
+          <p style="font-size: 13px; color: var(--p-color-text-secondary); margin-bottom: 16px;">
+            Restore 1-click theme purges, automated safety backups, and 24/7 uninstall detection.
+          </p>
+
+          <div class="sub-card" style="margin-top: 0; margin-bottom: 18px;">
+            <div class="sub-detail-row">
+              <span class="sub-detail-label">Current Status</span>
+              <span class="sub-badge sub-badge-cancelled">● Inactive</span>
+            </div>
+            <div class="sub-detail-row">
+              <span class="sub-detail-label">Subscription Plan</span>
+              <span class="sub-detail-val">$19.00 USD / month</span>
+            </div>
+            <div class="sub-detail-row">
+              <span class="sub-detail-label">Trial Status</span>
+              <span class="sub-detail-val" style="color: var(--p-color-text-subdued); font-weight: 500;">Previously Redeemed</span>
+            </div>
+            <div class="sub-detail-row">
+              <span class="sub-detail-label">Billing Cycle</span>
+              <span class="sub-detail-val">Starts Immediately</span>
+            </div>
+          </div>
+
+          <button class="btn-primary" id="btnStartTrial" style="width: 100%; justify-content: center; padding: 10px; font-size: 14px;">
+            Subscribe to Pro ($19/mo)
+          </button>
+        </div>
+      `;
+    } else {
+      // STATE 1: Eligible New Merchant (Has never used trial)
+      if (proModalTitle) proModalTitle.textContent = 'BloatBuster Automated Protection';
+      proModalBody.innerHTML = `
+        <div style="text-align: center;">
+          <div style="width: 48px; height: 48px; border-radius: var(--p-radius-sm); background: var(--p-color-primary-subdued); color: var(--p-color-primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+            <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M9.661 2.237a.75.75 0 0 1 .678 0 11.947 11.947 0 0 0 5.078 1.482.75.75 0 0 1 .672.745v4.662a12.052 12.052 0 0 1-4.78 9.69.75.75 0 0 1-.908 0A12.052 12.052 0 0 1 5.61 9.126V4.464a.75.75 0 0 1 .672-.745 11.947 11.947 0 0 0 5.078-1.482Zm-1.84 8.785a.75.75 0 0 0 1.06 1.06l1.625-1.625 2.125 2.125a.75.75 0 1 0 1.06-1.06l-2.655-2.655a.75.75 0 0 0-1.06 0L7.82 11.022Z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">Automated 1-Click Theme Purge</h3>
+          <p style="font-size: 13px; color: var(--p-color-text-secondary); margin-bottom: 18px;">
+            Safely clean dead scripts without touching theme code manually.
+          </p>
+
+          <div style="text-align: left; background: var(--p-color-bg-surface-secondary); border: 1px solid var(--p-color-border-subdued); border-radius: var(--p-radius-sm); padding: 14px 16px; margin-bottom: 18px; font-size: 12.5px; line-height: 1.8;">
+            <div>&bull; <strong>1-Click Theme Duplication:</strong> Automatic safety backup before changes.</div>
+            <div>&bull; <strong>Automated Snippet Excision:</strong> Removes dead tags instantly via Theme API.</div>
+            <div>&bull; <strong>24/7 Uninstall Watchdog:</strong> Instant alert when an uninstalled app leaves debris.</div>
+            <div>&bull; <strong>Continuous Speed Monitoring:</strong> Prevents silent PageSpeed score drops.</div>
+          </div>
+
+          <div style="font-size: 26px; font-weight: 800; color: var(--p-color-text); margin-bottom: 2px;">$19 <span style="font-size: 13px; color: var(--p-color-text-subdued); font-weight: 400;">/ month</span></div>
+          <div style="font-size: 12px; color: var(--p-color-primary); font-weight: 600; margin-bottom: 18px;">7-Day Free Trial &bull; Powered by Shopify Native Billing</div>
+
+          <button class="btn-primary" id="btnStartTrial" style="width: 100%; justify-content: center; padding: 10px; font-size: 14px;">
+            Start 7-Day Free Trial
+          </button>
+        </div>
+      `;
+    }
+  }
+
+  // 4. Attach Event Listener for Start Trial / Subscribe Button
+  const startTrialBtn = document.getElementById('btnStartTrial');
   if (startTrialBtn) {
     startTrialBtn.addEventListener('click', async () => {
+      const originalBtnText = startTrialBtn.textContent.trim();
       startTrialBtn.disabled = true;
       startTrialBtn.innerHTML = `
         <span class="polaris-spinner" style="width: 16px; height: 16px; margin: 0 8px 0 0; display: inline-block; vertical-align: middle;"></span>
@@ -278,9 +521,9 @@ async function initBilling() {
           }
         } else if (data.error) {
           startTrialBtn.disabled = false;
-          startTrialBtn.textContent = 'Start 7-Day Free Trial';
+          startTrialBtn.textContent = originalBtnText;
           showAlert({
-            title: 'Shopify Partner Billing Requirement',
+            title: 'Shopify Billing Requirement',
             message: data.error,
             type: 'warning',
             details: {
@@ -291,7 +534,7 @@ async function initBilling() {
         }
       } catch (err) {
         startTrialBtn.disabled = false;
-        startTrialBtn.textContent = 'Start 7-Day Free Trial';
+        startTrialBtn.textContent = originalBtnText;
         showAlert({
           title: 'Subscription Initialization Failed',
           message: `Failed to initiate subscription: ${err.message}`,
@@ -302,6 +545,75 @@ async function initBilling() {
     });
   }
 }
+
+// 4.1 Open Shopify Billing Management in New Tab or Embedded Admin
+window.openShopifyManageUrl = function(url) {
+  const cleanShop = getCurrentShop();
+  const storeName = cleanShop.replace('.myshopify.com', '');
+  const targetUrl = url || `https://admin.shopify.com/store/${storeName}/settings/billing`;
+  try {
+    if (window.shopify && typeof window.shopify.open === 'function') {
+      window.shopify.open(targetUrl, '_blank');
+    } else {
+      window.open(targetUrl, '_blank');
+    }
+  } catch {
+    window.open(targetUrl, '_blank');
+  }
+};
+
+// 4.2 Professional Cancel Subscription Handler with Confirmation Dialog
+window.handleCancelSubscription = async function() {
+  const cleanShop = getCurrentShop();
+
+  const confirmed = await showConfirm({
+    title: 'Cancel BloatBuster Pro Subscription?',
+    message: 'Are you sure you want to cancel your BloatBuster Pro subscription? Your theme files remain completely safe and untouched, but automated 24/7 watchdog protection and 1-click cleanups will be paused.',
+    type: 'warning',
+    details: {
+      'Store Connection': cleanShop,
+      'Immediate Result': 'Account reverts to Free Tier upon confirmation.',
+      'Reactivation': 'You can reactivate anytime directly from your dashboard without penalty.'
+    },
+    confirmText: 'Yes, Cancel Subscription',
+    cancelText: 'Keep Subscription',
+    isDestructive: true
+  });
+
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch('/api/billing/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shop: cleanShop })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showToast('Subscription successfully cancelled. Account reverted to Free Tier.', 'success');
+      const proModal = document.getElementById('proModal');
+      if (proModal) proModal.style.display = 'none';
+
+      // Refresh billing status immediately to reflect Free / Cancelled status
+      await initBilling();
+    } else {
+      showAlert({
+        title: 'Cancellation Notice',
+        message: data.error || 'Shopify was unable to process the cancellation request. You can also cancel directly in your Shopify Admin Settings > Billing.',
+        type: 'warning',
+        confirmText: 'Understood'
+      });
+    }
+  } catch (err) {
+    showAlert({
+      title: 'Cancellation Error',
+      message: `Failed to cancel subscription: ${err.message}`,
+      type: 'error',
+      confirmText: 'Dismiss'
+    });
+  }
+};
 
 // 5. Setup Theme Safety Backup Button
 function setupBackupButton() {

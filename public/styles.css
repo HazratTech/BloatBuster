@@ -837,3 +837,110 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+/* Subscription Management & Lifecycle Cards */
+.sub-card {
+  background: var(--p-color-bg-surface-secondary);
+  border: 1px solid var(--p-color-border-subdued);
+  border-radius: var(--p-radius-sm);
+  padding: 16px 18px;
+  margin: 16px 0 20px;
+  text-align: left;
+}
+
+.sub-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--p-color-border-subdued);
+  font-size: 13px;
+}
+
+.sub-detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.sub-detail-row:first-child {
+  padding-top: 0;
+}
+
+.sub-detail-label {
+  color: var(--p-color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sub-detail-val {
+  color: var(--p-color-text);
+  font-weight: 600;
+  text-align: right;
+}
+
+.sub-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.sub-badge-trial {
+  background: #E4F8F0;
+  color: #007A5C;
+  border: 1px solid #AEE9D1;
+}
+
+.sub-badge-active {
+  background: #E4F8F0;
+  color: #007A5C;
+  border: 1px solid #AEE9D1;
+}
+
+.sub-badge-cancelled {
+  background: #F6F6F7;
+  color: #5C5F62;
+  border: 1px solid #E1E3E5;
+}
+
+.sub-badge-renewing {
+  background: #F0F5FF;
+  color: #005BD3;
+  border: 1px solid #C4D9FF;
+}
+
+.sub-actions-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.btn-destructive-subtle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFF4F4;
+  color: #D72C0D;
+  border: 1px solid #FED2D1;
+  border-radius: var(--p-radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-destructive-subtle:hover {
+  background: #FFE8E7;
+  border-color: #F8B4B4;
+}
+
+.btn-destructive-subtle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -47,11 +47,11 @@
           <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
         </svg>
         <div>
-          <span style="font-weight: 600; color: var(--p-color-text); font-size: 13.5px;">BloatBuster Pro Plan Active</span>
+          <span style="font-weight: 600; color: var(--p-color-text); font-size: 13.5px;" id="proActiveBannerTitle">BloatBuster Pro Plan Active</span>
           <span style="font-size: 12px; color: var(--p-color-text-secondary); margin-left: 8px;">&bull; 24/7 Watchdog Theme Protection Enabled</span>
         </div>
       </div>
-      <span class="badge badge-success">Active Subscription</span>
+      <span class="badge badge-success" id="proActiveBannerBadge">Active Subscription</span>
     </div>
 
     <!-- Navigation Tabs -->
@@ -381,37 +381,15 @@
     </div>
   </div>
 
-  <!-- Automated Pro Modal ($19/mo) -->
-  <div id="proModal" class="modal-overlay">
-    <div class="modal-dialog" style="max-width: 480px;">
+  <!-- Subscription Lifecycle Modal (Trial Start, Trial Active, Paid, Manage, Cancel) -->
+  <div id="proModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="proModalTitle">
+    <div class="modal-dialog" style="max-width: 490px;">
       <div class="modal-head">
-        <div class="modal-title">BloatBuster Automated Protection</div>
-        <button class="pill-btn" id="closeProModal" style="border: none; font-size: 16px; cursor: pointer;">&times;</button>
+        <div class="modal-title" id="proModalTitle">BloatBuster Automated Protection</div>
+        <button class="pill-btn" id="closeProModal" style="border: none; font-size: 16px; cursor: pointer;" aria-label="Close dialog">&times;</button>
       </div>
-      <div class="modal-body" style="text-align: center;">
-        <div style="width: 48px; height: 48px; border-radius: var(--p-radius-sm); background: var(--p-color-primary-subdued); color: var(--p-color-primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
-          <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M9.661 2.237a.75.75 0 0 1 .678 0 11.947 11.947 0 0 0 5.078 1.482.75.75 0 0 1 .672.745v4.662a12.052 12.052 0 0 1-4.78 9.69.75.75 0 0 1-.908 0A12.052 12.052 0 0 1 5.61 9.126V4.464a.75.75 0 0 1 .672-.745 11.947 11.947 0 0 0 5.078-1.482Zm-1.84 8.785a.75.75 0 0 0 1.06 1.06l1.625-1.625 2.125 2.125a.75.75 0 1 0 1.06-1.06l-2.655-2.655a.75.75 0 0 0-1.06 0L7.82 11.022Z" clip-rule="evenodd"/>
-          </svg>
-        </div>
-        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">Automated 1-Click Theme Purge</h3>
-        <p style="font-size: 13px; color: var(--p-color-text-secondary); margin-bottom: 20px;">
-          Safely clean dead scripts without touching theme code manually.
-        </p>
-
-        <div style="text-align: left; background: var(--p-color-bg-surface-secondary); border: 1px solid var(--p-color-border-subdued); border-radius: var(--p-radius-sm); padding: 14px 16px; margin-bottom: 20px; font-size: 12.5px; line-height: 1.8;">
-          <div>&bull; <strong>1-Click Theme Duplication:</strong> Automatic safety backup before changes.</div>
-          <div>&bull; <strong>Automated Snippet Excision:</strong> Removes dead tags instantly via Theme API.</div>
-          <div>&bull; <strong>24/7 Uninstall Watchdog:</strong> Instant alert when an uninstalled app leaves debris.</div>
-          <div>&bull; <strong>Continuous Speed Monitoring:</strong> Prevents silent PageSpeed score drops.</div>
-        </div>
-
-        <div style="font-size: 26px; font-weight: 800; color: var(--p-color-text); margin-bottom: 2px;">$19 <span style="font-size: 13px; color: var(--p-color-text-subdued); font-weight: 400;">/ month</span></div>
-        <div style="font-size: 12px; color: var(--p-color-primary); font-weight: 600; margin-bottom: 20px;">7-Day Free Trial &bull; Powered by Shopify Native Billing</div>
-
-        <button class="btn-primary" id="btnStartTrial" style="width: 100%; justify-content: center; padding: 10px; font-size: 14px;">
-          Start 7-Day Free Trial
-        </button>
+      <div class="modal-body" id="proModalBody" style="padding: 24px;">
+        <!-- Dynamically rendered via app.js initBilling() -->
       </div>
     </div>
   </div>

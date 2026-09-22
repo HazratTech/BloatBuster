@@ -490,6 +490,12 @@ async function createAppSubscription({ shop, accessToken, returnUrl }) {
     }
   }
 
+  // 2. Check trial eligibility (prevent multiple trials for the same store)
+  const session = getSession(cleanShop);
+  const hasUsedTrial = Boolean(session?.hasUsedTrial || session?.trialEndsAt || session?.subscribedAt || session?.subscriptionStatus === 'CANCELLED');
+  const trialDays = hasUsedTrial ? 0 : 7;
+  console.log(`[BloatBuster Billing] Store ${cleanShop} trial eligibility: hasUsedTrial=${hasUsedTrial} -> trialDays=${trialDays}`);
+
   async function executeMutation(useTest) {
     const graphqlQuery = {
       query: `
@@ -511,7 +517,7 @@ async function createAppSubscription({ shop, accessToken, returnUrl }) {
       variables: {
         name: "BloatBuster Pro: Automated Theme Cleaner",
         returnUrl,
-        trialDays: 7,
+        trialDays: trialDays,
         test: useTest,
         lineItems: [
           {
@@ -614,6 +620,24 @@ const server = http.createServer(async (req, res) => {
         const targetShop = shopDomain || payload.myshopify_domain || payload.shop_domain;
         if (targetShop) {
           removeSession(targetShop);
+        }
+      }
+
+      // Handle App Subscriptions Lifecycle Updates from Shopify Admin
+      if (topic === 'app_subscriptions/update') {
+        const sub = payload.app_subscription;
+        const targetShop = shopDomain || payload.myshopify_domain || payload.shop_domain;
+        if (targetShop && sub) {
+          const cleanShop = targetShop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+          const isPro = sub.status === 'ACTIVE';
+          saveSession(cleanShop, {
+            isPro,
+            subscriptionId: sub.admin_graphql_api_id || sub.id,
+            subscriptionStatus: sub.status,
+            hasUsedTrial: true,
+            updatedAt: new Date().toISOString()
+          });
+          console.log(`[BloatBuster Webhook] Subscription update received for ${cleanShop}: status=${sub.status}, isPro=${isPro}`);
         }
       }
 
@@ -808,31 +832,263 @@ const server = http.createServer(async (req, res) => {
       const chargeId = url.searchParams.get('charge_id');
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-      console.log(`[BloatBuster Billing] Merchant confirmed subscription on store: ${cleanShop}`);
+      const now = Date.now();
+      const priorSession = getSession(cleanShop);
+      const hadUsedTrialBefore = Boolean(priorSession?.hasUsedTrial);
+      const trialDaysGranted = hadUsedTrialBefore ? 0 : 7;
+      const trialEndsAt = trialDaysGranted > 0 ? new Date(now + trialDaysGranted * 24 * 60 * 60 * 1000).toISOString() : null;
+
+      console.log(`[BloatBuster Billing] Merchant confirmed subscription on store: ${cleanShop} (trialDays=${trialDaysGranted})`);
       saveSession(cleanShop, {
         isPro: true,
         subscriptionPlan: 'pro_monthly',
-        chargeId,
-        subscribedAt: new Date().toISOString()
+        subscriptionStatus: 'ACTIVE',
+        chargeId: chargeId || null,
+        hasUsedTrial: true,
+        trialDays: trialDaysGranted,
+        trialEndsAt,
+        subscribedAt: new Date(now).toISOString()
       });
 
       const storeName = cleanShop.replace('.myshopify.com', '');
       return redirectShopifyAdmin(res, `https://admin.shopify.com/store/${storeName}/apps/${SHOPIFY_API_KEY}?plan=pro&subscribed=true`, 'Activating BloatBuster Pro...');
     }
 
-    // 4. Check Billing Status
+    // 4. Check Billing Status (Full Lifecycle: Trial Active, Paid, Cancelled, Expired)
     if (pathname === '/api/billing/status') {
       const shop = url.searchParams.get('shop');
       if (!shop) {
-        return sendJson(res, 200, { isPro: false, plan: 'Free Tier', hasToken: false });
+        return sendJson(res, 200, {
+          isPro: false,
+          status: 'FREE',
+          hasUsedTrial: false,
+          plan: 'Free Tier',
+          hasToken: false
+        });
       }
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
       const session = getSession(cleanShop);
+      const now = Date.now();
+
+      let isPro = Boolean(session?.isPro);
+      let status = session?.subscriptionStatus || (isPro ? 'ACTIVE' : 'FREE');
+      let hasUsedTrial = Boolean(session?.hasUsedTrial || session?.subscribedAt || session?.trialEndsAt || session?.subscriptionStatus === 'CANCELLED');
+      let isTrialActive = false;
+      let trialDaysRemaining = 0;
+      let trialEndsAt = session?.trialEndsAt || null;
+      let currentPeriodEnd = null;
+      let subscriptionId = session?.subscriptionId || session?.chargeId || null;
+      let isTest = Boolean(session?.isTest);
+
+      // Attempt live sync with Shopify GraphQL if valid access token exists
+      const accessToken = await getValidAccessToken(cleanShop);
+      if (accessToken) {
+        try {
+          const subQueryRes = await fetch(`https://${cleanShop}/admin/api/2025-01/graphql.json`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Shopify-Access-Token': accessToken
+            },
+            body: JSON.stringify({
+              query: `
+                query {
+                  currentAppInstallation {
+                    activeSubscriptions {
+                      id
+                      name
+                      status
+                      currentPeriodEnd
+                      trialDays
+                      createdAt
+                      test
+                    }
+                  }
+                }
+              `
+            })
+          });
+          const subQueryData = await subQueryRes.json();
+          const activeSubs = subQueryData?.data?.currentAppInstallation?.activeSubscriptions;
+
+          if (Array.isArray(activeSubs) && activeSubs.length > 0) {
+            const primarySub = activeSubs[0];
+            isPro = primarySub.status === 'ACTIVE';
+            status = primarySub.status;
+            subscriptionId = primarySub.id;
+            isTest = Boolean(primarySub.test);
+            hasUsedTrial = true;
+            currentPeriodEnd = primarySub.currentPeriodEnd || null;
+
+            const subCreatedAt = primarySub.createdAt ? new Date(primarySub.createdAt).getTime() : (session?.subscribedAt ? new Date(session.subscribedAt).getTime() : now);
+            const subTrialDays = typeof primarySub.trialDays === 'number' ? primarySub.trialDays : (session?.trialDays || 0);
+
+            if (subTrialDays > 0) {
+              const computedEnd = subCreatedAt + (subTrialDays * 24 * 60 * 60 * 1000);
+              trialEndsAt = new Date(computedEnd).toISOString();
+              if (now < computedEnd) {
+                isTrialActive = true;
+                trialDaysRemaining = Math.max(1, Math.ceil((computedEnd - now) / (24 * 60 * 60 * 1000)));
+              } else {
+                isTrialActive = false;
+                trialDaysRemaining = 0;
+              }
+            } else {
+              isTrialActive = false;
+              trialDaysRemaining = 0;
+            }
+
+            // Sync back to persistent session
+            saveSession(cleanShop, {
+              isPro,
+              subscriptionId,
+              subscriptionStatus: status,
+              hasUsedTrial: true,
+              trialDays: subTrialDays,
+              trialEndsAt,
+              isTest
+            });
+          } else if (subQueryData?.data?.currentAppInstallation && session?.isPro) {
+            // Shopify returned 0 active subscriptions, update session to CANCELLED
+            isPro = false;
+            status = 'CANCELLED';
+            saveSession(cleanShop, {
+              isPro: false,
+              subscriptionStatus: 'CANCELLED'
+            });
+          }
+        } catch (graphErr) {
+          console.warn(`[BloatBuster Billing Status] Could not sync live GraphQL status for ${cleanShop}:`, graphErr.message);
+        }
+      }
+
+      // Fallback calculations from session data
+      if (isPro && !isTrialActive && session?.trialEndsAt) {
+        const endMs = new Date(session.trialEndsAt).getTime();
+        if (now < endMs) {
+          isTrialActive = true;
+          trialDaysRemaining = Math.max(1, Math.ceil((endMs - now) / (24 * 60 * 60 * 1000)));
+        }
+      }
+
+      if (isPro && !currentPeriodEnd && session?.subscribedAt) {
+        const subDate = new Date(session.subscribedAt).getTime();
+        currentPeriodEnd = new Date(subDate + 30 * 24 * 60 * 60 * 1000).toISOString();
+      }
+
+      const storeName = cleanShop.replace('.myshopify.com', '');
+      const manageUrl = `https://admin.shopify.com/store/${storeName}/settings/billing`;
 
       return sendJson(res, 200, {
-        isPro: Boolean(session?.isPro),
-        plan: session?.isPro ? 'BloatBuster Pro ($19/mo)' : 'Free Tier',
-        hasToken: Boolean(session?.accessToken)
+        isPro,
+        status,
+        isTrialActive,
+        trialDaysRemaining,
+        trialEndsAt,
+        currentPeriodEnd,
+        hasUsedTrial,
+        plan: isPro ? 'BloatBuster Pro ($19/mo)' : 'Free Tier',
+        price: '$19 / month',
+        subscriptionId,
+        manageUrl,
+        hasToken: Boolean(session?.accessToken),
+        isTest
+      });
+    }
+
+    // 5. Cancel Subscription Endpoint
+    if (pathname === '/api/billing/cancel' && req.method === 'POST') {
+      const { shop } = await parseJsonBody(req);
+      if (!shop) {
+        return sendJson(res, 400, { error: 'Missing shop domain parameter.' });
+      }
+      const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const session = getSession(cleanShop);
+      const accessToken = await getValidAccessToken(cleanShop);
+
+      let subscriptionId = session?.subscriptionId;
+
+      // If no subscriptionId stored in session, query Shopify
+      if (!subscriptionId && accessToken) {
+        try {
+          const qRes = await fetch(`https://${cleanShop}/admin/api/2025-01/graphql.json`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Shopify-Access-Token': accessToken
+            },
+            body: JSON.stringify({
+              query: `query { currentAppInstallation { activeSubscriptions { id status } } }`
+            })
+          });
+          const qData = await qRes.json();
+          const activeSub = qData?.data?.currentAppInstallation?.activeSubscriptions?.[0];
+          if (activeSub?.id) {
+            subscriptionId = activeSub.id;
+          }
+        } catch (err) {
+          console.warn(`[BloatBuster Billing Cancel] Error fetching subscription ID for ${cleanShop}:`, err.message);
+        }
+      }
+
+      let canceledOnShopify = false;
+      let shopifyErrorMessage = null;
+
+      if (subscriptionId && accessToken) {
+        try {
+          const cancelRes = await fetch(`https://${cleanShop}/admin/api/2025-01/graphql.json`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Shopify-Access-Token': accessToken
+            },
+            body: JSON.stringify({
+              query: `
+                mutation AppSubscriptionCancel($id: ID!, $prorate: Boolean) {
+                  appSubscriptionCancel(id: $id, prorate: $prorate) {
+                    userErrors {
+                      field
+                      message
+                    }
+                    appSubscription {
+                      id
+                      status
+                    }
+                  }
+                }
+              `,
+              variables: {
+                id: subscriptionId,
+                prorate: false
+              }
+            })
+          });
+          const cancelData = await cancelRes.json();
+          const userErrors = cancelData?.data?.appSubscriptionCancel?.userErrors;
+          if (userErrors && userErrors.length > 0) {
+            shopifyErrorMessage = userErrors[0].message;
+            console.warn(`[BloatBuster Billing Cancel] Shopify user error: ${shopifyErrorMessage}`);
+          } else {
+            canceledOnShopify = true;
+            console.log(`[BloatBuster Billing Cancel] Successfully cancelled ${subscriptionId} for ${cleanShop}`);
+          }
+        } catch (cErr) {
+          console.error(`[BloatBuster Billing Cancel] Network error cancelling on Shopify:`, cErr);
+        }
+      }
+
+      // Update session locally: isPro = false, subscriptionStatus = 'CANCELLED', hasUsedTrial = true
+      saveSession(cleanShop, {
+        isPro: false,
+        subscriptionStatus: 'CANCELLED',
+        cancelledAt: new Date().toISOString(),
+        hasUsedTrial: true
+      });
+
+      return sendJson(res, 200, {
+        success: true,
+        canceledOnShopify,
+        message: 'Your BloatBuster Pro subscription has been cancelled. Your theme remains safe, and your store is now on the Free Tier.'
       });
     }
 
