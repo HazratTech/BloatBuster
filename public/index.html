@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BloatBuster: Theme Code & Script Cleaner</title>
+  <title>BloatBuster: Page Speed Boost & Theme Cleaner</title>
   <link rel="icon" type="image/png" href="/app-icon-512x512.png">
   <meta name="shopify-api-key" content="f3c6dde5474766c85897a2bd2567ea50">
   <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=2.0.0">
+  <link rel="stylesheet" href="/styles.css?v=2.2.1">
 </head>
 <body>
   <div class="polaris-layout">
@@ -23,7 +23,7 @@
           </span>
         </div>
         <h1 class="page-title">
-          Theme Script & Code Cleaner
+          Page Speed Boost & Theme Cleaner
           <span class="badge badge-info">v1.2 Production</span>
         </h1>
       </div>
@@ -100,6 +100,31 @@
           <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="3"/></svg>
           Safety Backup Ready
         </span>
+      </div>
+    </div>
+
+    <!-- 100% Theme Safety Guarantee Banner -->
+    <div class="safety-guarantee-card">
+      <div class="safety-guarantee-content">
+        <div class="safety-shield-badge">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.661 2.237a.75.75 0 0 1 .678 0 11.947 11.947 0 0 0 5.078 1.482.75.75 0 0 1 .672.745v4.662a12.052 12.052 0 0 1-4.78 9.69.75.75 0 0 1-.908 0A12.052 12.052 0 0 1 5.61 9.126V4.464a.75.75 0 0 1 .672-.745 11.947 11.947 0 0 0 5.078-1.482Zm-1.84 8.785a.75.75 0 0 0 1.06 1.06l1.625-1.625 2.125 2.125a.75.75 0 1 0 1.06-1.06l-2.655-2.655a.75.75 0 0 0-1.06 0L7.82 11.022Z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div>
+          <div class="safety-guarantee-title">
+            100% Theme Safety Guarantee &bull; Zero Live Storefront Risk
+          </div>
+          <div class="safety-guarantee-text">
+            BloatBuster automatically creates a timestamped safety backup of your theme before any code adjustments. You can restore your original live theme in 1-click at any time.
+          </div>
+        </div>
+      </div>
+      <div class="safety-guarantee-pill">
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="#008060" style="margin-right: 4px;">
+          <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+        </svg>
+        Free Tier Active &bull; Zero Risk
       </div>
     </div>
 
@@ -421,9 +446,28 @@
     </div>
   </div>
 
+  <!-- Merchant 5-Star Social Proof & Review Prompt Modal -->
+  <div id="reviewModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+    <div class="modal-dialog" style="max-width: 480px; text-align: center; padding: 24px;">
+      <div style="font-size: 38px; margin-bottom: 8px;">🎉</div>
+      <h3 id="reviewModalTitle" style="font-size: 18px; font-weight: 700; color: var(--p-color-text-primary); margin-bottom: 8px;">
+        Faster Storefront Unlocked!
+      </h3>
+      <p id="reviewModalDesc" style="font-size: 13px; color: var(--p-color-text-secondary); line-height: 1.5; margin-bottom: 20px;">
+        BloatBuster just safely streamlined your theme code. If we helped speed up your store, leaving a 30-second review on Shopify helps independent merchants like you discover us!
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button type="button" class="btn-secondary" id="closeReviewModal">Maybe Later</button>
+        <a href="https://apps.shopify.com/bloatbuster#modal-show=ReviewListingModal" target="_blank" rel="noopener noreferrer" class="btn-primary" id="leaveReviewBtn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+          ⭐️ Leave 5-Star Review
+        </a>
+      </div>
+    </div>
+  </div>
+
   <!-- Polaris Floating Toast Notification Container -->
   <div id="polarisToastContainer" class="polaris-toast-container" aria-live="polite"></div>
 
-  <script src="/app.js?v=2.2.0"></script>
+  <script src="/app.js?v=2.2.1"></script>
 </body>
 </html>

@@ -930,6 +930,14 @@ window.executeSafeDeactivate = async function(appName, codeSnippet, btnElement) 
         },
         confirmText: 'Great!'
       });
+      setTimeout(() => {
+        if (typeof showReviewPrompt === 'function') {
+          showReviewPrompt(
+            'Theme Code Safely Streamlined!',
+            'BloatBuster just safely deactivated dead app code with zero storefront risk. If BloatBuster sped up your store, a quick review on Shopify helps other merchants discover us!'
+          );
+        }
+      }, 1200);
     } else {
       throw new Error(data.error || 'Failed to deactivate snippet.');
     }
@@ -1179,6 +1187,17 @@ function renderReport(data) {
   document.getElementById('kpiWastedKB').textContent = `${totalWastedKB} KB`;
   document.getElementById('kpiDelay').textContent = `+${totalDelaySeconds}s`;
   document.getElementById('findingsBadge').textContent = `${data.detectedApps.length} Detected`;
+
+  if (suspectedOrphans.length === 0) {
+    setTimeout(() => {
+      if (typeof showReviewPrompt === 'function') {
+        showReviewPrompt(
+          'Storefront Clean & Fast!',
+          'BloatBuster verified that your storefront has zero leftover orphan scripts. If you love the peace of mind, leaving a 30-second review on Shopify helps other merchants discover us!'
+        );
+      }
+    }, 1800);
+  }
 
   // Render Table Rows
   const container = document.getElementById('findingsContainer');
@@ -1603,6 +1622,25 @@ function setupModals() {
     closeFeedbackModalBtn.addEventListener('click', () => closeFeedbackModal(false));
   }
 
+  // Review Modal Controls
+  const reviewModal = document.getElementById('reviewModal');
+  const closeReviewModal = document.getElementById('closeReviewModal');
+  const leaveReviewBtn = document.getElementById('leaveReviewBtn');
+
+  if (closeReviewModal) {
+    closeReviewModal.addEventListener('click', () => {
+      try { localStorage.setItem('bloatbuster_review_dismissed', '1'); } catch (e) {}
+      if (reviewModal) reviewModal.style.display = 'none';
+    });
+  }
+
+  if (leaveReviewBtn) {
+    leaveReviewBtn.addEventListener('click', () => {
+      try { localStorage.setItem('bloatbuster_review_dismissed', '1'); } catch (e) {}
+      if (reviewModal) reviewModal.style.display = 'none';
+    });
+  }
+
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (feedbackModal && feedbackModal.style.display === 'flex') {
@@ -1614,6 +1652,9 @@ function setupModals() {
       if (proModal && proModal.style.display === 'flex') {
         proModal.style.display = 'none';
       }
+      if (reviewModal && reviewModal.style.display === 'flex') {
+        reviewModal.style.display = 'none';
+      }
     }
   });
 
@@ -1621,8 +1662,30 @@ function setupModals() {
     if (e.target === excisionModal) excisionModal.style.display = 'none';
     if (e.target === proModal) proModal.style.display = 'none';
     if (e.target === feedbackModal) closeFeedbackModal(false);
+    if (e.target === reviewModal) reviewModal.style.display = 'none';
   });
 }
+
+// Window helper for showing review prompt
+window.showReviewPrompt = function(customTitle, customMessage) {
+  try {
+    if (localStorage.getItem('bloatbuster_review_dismissed')) return;
+  } catch (e) {}
+
+  const reviewModal = document.getElementById('reviewModal');
+  if (!reviewModal) return;
+
+  if (customTitle) {
+    const titleEl = document.getElementById('reviewModalTitle');
+    if (titleEl) titleEl.textContent = customTitle;
+  }
+  if (customMessage) {
+    const descEl = document.getElementById('reviewModalDesc');
+    if (descEl) descEl.textContent = customMessage;
+  }
+
+  reviewModal.style.display = 'flex';
+};
 
 // Crisp Vector SVGs for App Categories
 function getCategorySvg(category) {
