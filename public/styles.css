@@ -1030,10 +1030,41 @@ body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
-@media (max-width: 640px) {
+.safety-guarantee-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+#btnUpgradeBanner {
+  font-size: 12px;
+  padding: 6px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(0, 128, 96, 0.2);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+#btnUpgradeBanner:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
   .safety-guarantee-card {
     flex-direction: column;
     align-items: flex-start;
   }
+  .safety-guarantee-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
 }
+
 

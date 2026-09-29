@@ -191,10 +191,24 @@ async function initBilling() {
   const bannerTitle = document.getElementById('proActiveBannerTitle');
   const bannerBadge = document.getElementById('proActiveBannerBadge');
   const openProBtn = document.getElementById('openProModal');
+  const btnUpgradeBanner = document.getElementById('btnUpgradeBanner');
+  const btnUpgradeBannerText = document.getElementById('btnUpgradeBannerText');
+  const safetyTierPill = document.getElementById('safetyTierPill');
+  const btnContextUpgrade = document.getElementById('btnContextUpgrade');
+  const btnContextUpgradeText = document.getElementById('btnContextUpgradeText');
   const proModal = document.getElementById('proModal');
   const proModalTitle = document.getElementById('proModalTitle');
   const proModalBody = document.getElementById('proModalBody');
   const cleanShop = getCurrentShop();
+
+  // Wire click events for all upgrade entry points
+  const openModalHandler = (e) => {
+    if (e) e.preventDefault();
+    if (proModal) proModal.style.display = 'flex';
+  };
+  if (btnUpgradeBanner) btnUpgradeBanner.onclick = openModalHandler;
+  if (btnContextUpgrade) btnContextUpgrade.onclick = openModalHandler;
+  if (safetyTierPill) safetyTierPill.onclick = openModalHandler;
 
   const billingError = params.get('billing_error');
   if (billingError) {
@@ -273,6 +287,71 @@ async function initBilling() {
           <path fill-rule="evenodd" d="M10 2a1 1 0 0 1 .832.445l2.5 3.75a1 1 0 0 1 .168.555v1.25a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V6.75a1 1 0 0 1 .168-.555l2.5-3.75A1 1 0 0 1 10 2Zm-5 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H5Z" clip-rule="evenodd"/>
         </svg>
         Start 7-Day Trial
+      `;
+    }
+  }
+
+  // 1b. Update Safety Guarantee Card & Context Card Action Buttons
+  if (btnUpgradeBanner && btnUpgradeBannerText) {
+    if (billingData.isTrialActive) {
+      btnUpgradeBanner.className = 'btn-secondary';
+      btnUpgradeBannerText.textContent = 'Manage Subscription';
+    } else if (billingData.isPro) {
+      btnUpgradeBanner.className = 'btn-secondary';
+      btnUpgradeBannerText.textContent = 'Manage Subscription';
+    } else if (billingData.hasUsedTrial) {
+      btnUpgradeBanner.className = 'btn-primary';
+      btnUpgradeBannerText.textContent = 'Reactivate Pro ($6.99/mo)';
+    } else {
+      btnUpgradeBanner.className = 'btn-primary';
+      btnUpgradeBannerText.textContent = 'Upgrade to Pro ($6.99/mo)';
+    }
+  }
+
+  if (btnContextUpgrade && btnContextUpgradeText) {
+    if (billingData.isTrialActive) {
+      btnContextUpgrade.className = 'btn-secondary';
+      btnContextUpgradeText.textContent = 'Pro Trial Active';
+    } else if (billingData.isPro) {
+      btnContextUpgrade.className = 'btn-secondary';
+      btnContextUpgradeText.textContent = 'Pro Plan Active';
+    } else if (billingData.hasUsedTrial) {
+      btnContextUpgrade.className = 'btn-primary';
+      btnContextUpgradeText.textContent = 'Reactivate Pro';
+    } else {
+      btnContextUpgrade.className = 'btn-primary';
+      btnContextUpgradeText.textContent = 'Upgrade to Pro';
+    }
+  }
+
+  if (safetyTierPill) {
+    if (billingData.isTrialActive) {
+      safetyTierPill.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="#008060" style="margin-right: 4px;">
+          <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+        </svg>
+        Pro Trial (${billingData.trialDaysRemaining}d left)
+      `;
+    } else if (billingData.isPro) {
+      safetyTierPill.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="#008060" style="margin-right: 4px;">
+          <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+        </svg>
+        Pro Plan Active
+      `;
+    } else if (billingData.hasUsedTrial) {
+      safetyTierPill.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="#6D7175" style="margin-right: 4px;">
+          <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+        </svg>
+        Free Tier Active
+      `;
+    } else {
+      safetyTierPill.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="#008060" style="margin-right: 4px;">
+          <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+        </svg>
+        Free Tier Active &bull; Zero Risk
       `;
     }
   }
@@ -1613,6 +1692,21 @@ function setupModals() {
   }
   if (closeProModal) {
     closeProModal.addEventListener('click', () => proModal.style.display = 'none');
+  }
+
+  const btnUpgradeBanner = document.getElementById('btnUpgradeBanner');
+  if (btnUpgradeBanner) {
+    btnUpgradeBanner.addEventListener('click', () => proModal.style.display = 'flex');
+  }
+
+  const btnContextUpgrade = document.getElementById('btnContextUpgrade');
+  if (btnContextUpgrade) {
+    btnContextUpgrade.addEventListener('click', () => proModal.style.display = 'flex');
+  }
+
+  const safetyTierPill = document.getElementById('safetyTierPill');
+  if (safetyTierPill) {
+    safetyTierPill.addEventListener('click', () => proModal.style.display = 'flex');
   }
 
   // Feedback Modal Controls

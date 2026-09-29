@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" href="/app-icon-512x512.png">
   <meta name="shopify-api-key" content="f3c6dde5474766c85897a2bd2567ea50">
   <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=2.2.1">
+  <link rel="stylesheet" href="/styles.css?v=2.2.2">
 </head>
 <body>
   <div class="polaris-layout">
@@ -89,7 +89,7 @@
           <div class="meta-value" id="storeDomainHeader">Active Store</div>
         </div>
       </div>
-      <div style="display: flex; gap: 8px; align-items: center;">
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
         <button class="btn-secondary" id="btnCreateBackup" style="font-size: 12px; padding: 6px 12px;">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M3.75 3A1.75 1.75 0 0 0 2 4.75v10.5c0 .966.784 1.75 1.75 1.75h12.5A1.75 1.75 0 0 0 18 15.25v-8.5A1.75 1.75 0 0 0 16.25 5h-4.836a.25.25 0 0 1-.177-.073L9.823 3.513A1.75 1.75 0 0 0 8.586 3H3.75ZM10 8a.75.75 0 0 1 .75.75v1.5h1.5a.75.75 0 0 1 0 1.5h-1.5v1.5a.75.75 0 0 1-1.5 0v-1.5h-1.5a.75.75 0 0 1 0-1.5h1.5v-1.5A.75.75 0 0 1 10 8Z" clip-rule="evenodd"/>
@@ -100,6 +100,12 @@
           <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="3"/></svg>
           Safety Backup Ready
         </span>
+        <button type="button" class="btn-primary" id="btnContextUpgrade" style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 0 1 .832.445l2.5 3.75a1 1 0 0 1 .168.555v1.25a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V6.75a1 1 0 0 1 .168-.555l2.5-3.75A1 1 0 0 1 10 2Zm-5 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H5Z" clip-rule="evenodd"/>
+          </svg>
+          <span id="btnContextUpgradeText">Upgrade to Pro</span>
+        </button>
       </div>
     </div>
 
@@ -120,11 +126,19 @@
           </div>
         </div>
       </div>
-      <div class="safety-guarantee-pill">
-        <svg width="12" height="12" viewBox="0 0 20 20" fill="#008060" style="margin-right: 4px;">
-          <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
-        </svg>
-        Free Tier Active &bull; Zero Risk
+      <div class="safety-guarantee-actions">
+        <span class="safety-guarantee-pill" id="safetyTierPill" style="cursor: pointer;">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="#008060" style="margin-right: 4px;">
+            <path fill-rule="evenodd" d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8.707 13.707a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L8 11.586l6.293-6.293a1 1 0 0 1 1.414 1.414l-7 7Z" clip-rule="evenodd"/>
+          </svg>
+          Free Tier Active &bull; Zero Risk
+        </span>
+        <button type="button" class="btn-primary" id="btnUpgradeBanner">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 0 1 .832.445l2.5 3.75a1 1 0 0 1 .168.555v1.25a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V6.75a1 1 0 0 1 .168-.555l2.5-3.75A1 1 0 0 1 10 2Zm-5 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H5Z" clip-rule="evenodd"/>
+          </svg>
+          <span id="btnUpgradeBannerText">Upgrade to Pro ($6.99/mo)</span>
+        </button>
       </div>
     </div>
 
@@ -458,7 +472,7 @@
       </p>
       <div style="display: flex; gap: 10px; justify-content: center;">
         <button type="button" class="btn-secondary" id="closeReviewModal">Maybe Later</button>
-        <a href="https://apps.shopify.com/bloatbuster#modal-show=ReviewListingModal" target="_blank" rel="noopener noreferrer" class="btn-primary" id="leaveReviewBtn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+        <a href="https://apps.shopify.com/bloatbuster-clean-theme-code#modal-show=ReviewListingModal" target="_blank" rel="noopener noreferrer" class="btn-primary" id="leaveReviewBtn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
           ⭐️ Leave 5-Star Review
         </a>
       </div>
@@ -468,6 +482,6 @@
   <!-- Polaris Floating Toast Notification Container -->
   <div id="polarisToastContainer" class="polaris-toast-container" aria-live="polite"></div>
 
-  <script src="/app.js?v=2.2.1"></script>
+  <script src="/app.js?v=2.2.2"></script>
 </body>
 </html>
