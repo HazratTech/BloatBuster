@@ -102,10 +102,10 @@ In your **Shopify Partner Dashboard &rarr; Apps &rarr; BloatBuster &rarr; Distri
   * Manual step-by-step excision guides
   * Storefront Speed Health Grade (A to F)
 
-### Plan 2: Pro Tier ($6.99 Early Adopter Lock-In)
+### Plan 2: Pro Tier ($2.99 Early Adopter Lock-In)
 * **Plan Name:** `Automated Protection Pro`
-* **Price:** `$6.99 / month` (with 7-Day Free Trial)
-* **Description:** *"Launch Special: $6.99/mo for the first 50 stores (Lock in this rate forever before price increases to $19/mo)."*
+* **Price:** `$2.99 / month` (with 7-Day Free Trial)
+* **Description:** *"Launch Special: $2.99/mo for the first 50 stores (Lock in this rate forever before price increases to $9.99/mo)."*
 * **Included Features:**
   * 1-Click Automated Theme Backup before edits
   * 1-Click Safe Comment Deactivation (Zero storefront risk)

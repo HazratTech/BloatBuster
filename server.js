@@ -523,7 +523,7 @@ async function createAppSubscription({ shop, accessToken, returnUrl }) {
           {
             plan: {
               appRecurringPricingDetails: {
-                price: { amount: parseFloat(process.env.PLAN_PRICE_USD || '6.99'), currencyCode: "USD" },
+                price: { amount: parseFloat(process.env.PLAN_PRICE_USD || '2.99'), currencyCode: "USD" },
                 interval: "EVERY_30_DAYS"
               }
             }
@@ -987,9 +987,9 @@ const server = http.createServer(async (req, res) => {
         trialEndsAt,
         currentPeriodEnd,
         hasUsedTrial,
-        plan: isPro ? 'BloatBuster Pro ($6.99/mo)' : 'Free Tier',
-        price: '$6.99 / month',
-        regularPrice: '$19.00 / month',
+        plan: isPro ? 'BloatBuster Pro ($2.99/mo)' : 'Free Tier',
+        price: '$2.99 / month',
+        regularPrice: '$9.99 / month',
         isEarlyAdopterSpecial: true,
         subscriptionId,
         manageUrl,

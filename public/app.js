@@ -301,10 +301,10 @@ async function initBilling() {
       btnUpgradeBannerText.textContent = 'Manage Subscription';
     } else if (billingData.hasUsedTrial) {
       btnUpgradeBanner.className = 'btn-primary';
-      btnUpgradeBannerText.textContent = 'Reactivate Pro ($6.99/mo)';
+      btnUpgradeBannerText.textContent = 'Reactivate Pro ($2.99/mo)';
     } else {
       btnUpgradeBanner.className = 'btn-primary';
-      btnUpgradeBannerText.textContent = 'Upgrade to Pro ($6.99/mo)';
+      btnUpgradeBannerText.textContent = 'Upgrade to Pro ($2.99/mo)';
     }
   }
 
@@ -402,7 +402,7 @@ async function initBilling() {
           </div>
           <div class="sub-detail-row">
             <span class="sub-detail-label">Plan Price</span>
-            <span class="sub-detail-val">$6.99 USD / month <span style="color: #8A6100; font-size: 11px; font-weight: 500;">(Launch Lock-In)</span></span>
+            <span class="sub-detail-val">$2.99 USD / month <span style="color: #8A6100; font-size: 11px; font-weight: 500;">(Launch Lock-In)</span></span>
           </div>
           <div class="sub-detail-row">
             <span class="sub-detail-label">Trial Expiration</span>
@@ -453,7 +453,7 @@ async function initBilling() {
           </div>
           <div class="sub-detail-row">
             <span class="sub-detail-label">Current Plan</span>
-            <span class="sub-detail-val">$6.99 USD / month <span style="color: #007A5C; font-size: 11px; font-weight: 500;">(Grandfathered Rate)</span></span>
+            <span class="sub-detail-val">$2.99 USD / month <span style="color: #007A5C; font-size: 11px; font-weight: 500;">(Grandfathered Rate)</span></span>
           </div>
           <div class="sub-detail-row">
             <span class="sub-detail-label">Billing Cycle</span>
@@ -503,7 +503,7 @@ async function initBilling() {
             </div>
             <div class="sub-detail-row">
               <span class="sub-detail-label">Subscription Plan</span>
-              <span class="sub-detail-val">$6.99 USD / month</span>
+              <span class="sub-detail-val">$2.99 USD / month</span>
             </div>
             <div class="sub-detail-row">
               <span class="sub-detail-label">Trial Status</span>
@@ -516,7 +516,7 @@ async function initBilling() {
           </div>
 
           <button class="btn-primary" id="btnStartTrial" style="width: 100%; justify-content: center; padding: 10px; font-size: 14px;">
-            Subscribe to Pro ($6.99/mo)
+            Subscribe to Pro ($2.99/mo)
           </button>
         </div>
       `;
@@ -545,14 +545,14 @@ async function initBilling() {
           </div>
 
           <div style="font-size: 26px; font-weight: 800; color: var(--p-color-text); margin-bottom: 2px;">
-            <span class="price-strikethrough">$19.00</span>$6.99 <span style="font-size: 13px; color: var(--p-color-text-subdued); font-weight: 400;">/ month</span>
+            <span class="price-strikethrough">$9.99</span>$2.99 <span style="font-size: 13px; color: var(--p-color-text-subdued); font-weight: 400;">/ month</span>
           </div>
           <div style="font-size: 12px; color: var(--p-color-primary); font-weight: 600; margin-bottom: 18px;">
-            7-Day Free Trial Included &bull; Lock In $6.99/mo Forever
+            7-Day Free Trial Included &bull; Lock In $2.99/mo Forever
           </div>
 
           <button class="btn-primary" id="btnStartTrial" style="width: 100%; justify-content: center; padding: 10px; font-size: 14px;">
-            Start 7-Day Free Trial ($6.99/mo)
+            Start 7-Day Free Trial ($2.99/mo)
           </button>
         </div>
       `;
