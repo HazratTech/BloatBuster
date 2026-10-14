@@ -219,6 +219,49 @@
           </div>
         </div>
 
+        <!-- Core Web Vitals & Live PageSpeed Benchmark -->
+        <div class="polaris-card" style="margin-bottom: 20px;">
+          <div style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--p-color-border-subdued); flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: 700; font-size: 14px;">Core Web Vitals & Live Google PageSpeed</span>
+                <span class="badge badge-info" id="pagespeedStrategyBadge">Mobile Benchmark</span>
+              </div>
+              <div style="font-size: 12px; color: var(--p-color-text-secondary); margin-top: 2px;">
+                Measures real-world user experience and thread blocking directly via Google PageSpeed telemetry.
+              </div>
+            </div>
+            <button type="button" class="btn-secondary" id="btnRunPageSpeed" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 6px 12px; cursor: pointer;">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.451a.75.75 0 0 0 0-1.5H4.5a.75.75 0 0 0-.75.75v3.75a.75.75 0 0 0 1.5 0v-2.034l.432.432a7 7 0 0 0 11.666-3.138.75.75 0 1 0-1.458-.415ZM4.688 8.576a5.5 5.5 0 0 1 9.201-2.466l.312.311h-2.451a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 .75-.75V3.421a.75.75 0 0 0-1.5 0v2.034l-.432-.432a7 7 0 0 0-11.666 3.138.75.75 0 0 0 1.458.415Z" clip-rule="evenodd"/>
+              </svg>
+              Run Live PageSpeed Test
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding: 16px 20px; background: var(--p-color-bg-surface-secondary);" id="cwvMetricsContainer">
+            <div style="background: var(--p-color-bg-surface); padding: 12px; border-radius: var(--p-radius-sm); border: 1px solid var(--p-color-border); text-align: center;">
+              <div style="font-size: 11px; color: var(--p-color-text-secondary); text-transform: uppercase; font-weight: 600;">PageSpeed Score</div>
+              <div style="font-size: 22px; font-weight: 800; color: #008060; margin: 4px 0;" id="cwvScore">--</div>
+              <div style="font-size: 10.5px; color: var(--p-color-text-subdued);">Google Mobile Rating</div>
+            </div>
+            <div style="background: var(--p-color-bg-surface); padding: 12px; border-radius: var(--p-radius-sm); border: 1px solid var(--p-color-border); text-align: center;">
+              <div style="font-size: 11px; color: var(--p-color-text-secondary); text-transform: uppercase; font-weight: 600;">LCP (Largest Paint)</div>
+              <div style="font-size: 18px; font-weight: 700; color: var(--p-color-text); margin: 4px 0;" id="cwvLcp">--</div>
+              <div style="font-size: 10.5px; color: var(--p-color-text-subdued);">Target &lt; 2.5s</div>
+            </div>
+            <div style="background: var(--p-color-bg-surface); padding: 12px; border-radius: var(--p-radius-sm); border: 1px solid var(--p-color-border); text-align: center;">
+              <div style="font-size: 11px; color: var(--p-color-text-secondary); text-transform: uppercase; font-weight: 600;">FCP (First Paint)</div>
+              <div style="font-size: 18px; font-weight: 700; color: var(--p-color-text); margin: 4px 0;" id="cwvFcp">--</div>
+              <div style="font-size: 10.5px; color: var(--p-color-text-subdued);">Target &lt; 1.8s</div>
+            </div>
+            <div style="background: var(--p-color-bg-surface); padding: 12px; border-radius: var(--p-radius-sm); border: 1px solid var(--p-color-border); text-align: center;">
+              <div style="font-size: 11px; color: var(--p-color-text-secondary); text-transform: uppercase; font-weight: 600;">Total Blocking Time</div>
+              <div style="font-size: 18px; font-weight: 700; color: var(--p-color-text); margin: 4px 0;" id="cwvTbt">--</div>
+              <div style="font-size: 10.5px; color: var(--p-color-text-subdued);">Script Thread Lag</div>
+            </div>
+          </div>
+        </div>
+
         <!-- Findings ResourceList -->
         <div class="polaris-card">
           <div class="table-header">
@@ -295,6 +338,16 @@
               <div style="font-size: 20px; font-weight: 700; color: var(--p-color-primary);" id="kpiThemeActiveEmbeds">0 Embeds</div>
               <div style="font-size: 11px; color: var(--p-color-text-subdued);">Active OS 2.0 app blocks in use</div>
             </div>
+            <div style="background: var(--p-color-bg-surface); padding: 14px; border-radius: var(--p-radius-sm); border: 1px solid var(--p-color-border);">
+              <div style="font-size: 12px; color: var(--p-color-text-secondary); margin-bottom: 4px;">Unreferenced Assets</div>
+              <div style="font-size: 20px; font-weight: 700; color: #8A6100;" id="kpiThemeUnusedAssets">0 Files</div>
+              <div style="font-size: 11px; color: var(--p-color-text-subdued);">Dead CSS/JS files in assets/</div>
+            </div>
+            <div style="background: var(--p-color-bg-surface); padding: 14px; border-radius: var(--p-radius-sm); border: 1px solid var(--p-color-border);">
+              <div style="font-size: 12px; color: var(--p-color-text-secondary); margin-bottom: 4px;">24/7 Watchdog Status</div>
+              <div style="font-size: 20px; font-weight: 700; color: #008060;" id="kpiThemeWatchdog">Active ✓</div>
+              <div style="font-size: 11px; color: var(--p-color-text-subdued);">Continuous theme debt alert</div>
+            </div>
           </div>
 
           <!-- Section 1: Orphan Liquid Tags in theme.liquid -->
@@ -331,6 +384,45 @@
               <span class="badge badge-success" id="themeActiveCountBadge">0 Active</span>
             </div>
             <div id="themeActiveEmbedsContainer"></div>
+          </div>
+
+          <!-- Section 4: Unreferenced Asset Files in assets/ -->
+          <div style="padding: 16px 20px; border-top: 1px solid var(--p-color-border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <h3 style="font-size: 14px; font-weight: 600;">Unreferenced Asset Files in assets/ (Dead CSS & JS)</h3>
+                <div style="font-size: 12px; color: var(--p-color-text-secondary);">
+                  Stylesheets and JavaScript files not referenced in layout/theme.liquid. BloatBuster safely backs up your theme before archiving.
+                </div>
+              </div>
+              <span class="badge badge-warning" id="themeAssetCountBadge">0 Assets</span>
+            </div>
+            <div id="themeUnusedAssetsContainer"></div>
+          </div>
+
+          <!-- Section 5: 24/7 Automated Uninstall Watchdog -->
+          <div style="padding: 16px 20px; background: linear-gradient(135deg, #F9FAFB 0%, #F0FDF4 100%); border-top: 1px solid var(--p-color-border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: #008060; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM4.05 10a5.97 5.97 0 0 1 .79-2.92l4.16 4.16v.76a1 1 0 0 0 1 1h.5a1 1 0 0 0 1-1v-1a1 1 0 0 0-1-1h-1.5a1 1 0 0 1-1-1V8.25A.75.75 0 0 1 8.75 7.5h.5a1 1 0 0 0 1-1v-.5a1 1 0 0 0-1-1h-.25A5.99 5.99 0 0 1 10 4.05a5.98 5.98 0 0 1 5.66 4.07 1 1 0 0 0-.66.88v.5a1 1 0 0 0 1 1h.75A5.98 5.98 0 0 1 10 15.95 5.97 5.97 0 0 1 4.05 10Z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700; font-size: 14px; color: #0c5132;">24/7 Automated Theme Watchdog</div>
+                  <div style="font-size: 12px; color: #1a6245;" id="watchdogStatusText">
+                    Active &bull; Continuously monitoring uninstalled apps &amp; preventing theme speed regression.
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn-secondary" id="btnRunWatchdogScan" style="font-size: 12.5px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.451a.75.75 0 0 0 0-1.5H4.5a.75.75 0 0 0-.75.75v3.75a.75.75 0 0 0 1.5 0v-2.034l.432.432a7 7 0 0 0 11.666-3.138.75.75 0 1 0-1.458-.415ZM4.688 8.576a5.5 5.5 0 0 1 9.201-2.466l.312.311h-2.451a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 .75-.75V3.421a.75.75 0 0 0-1.5 0v2.034l-.432-.432a7 7 0 0 0-11.666 3.138.75.75 0 0 0 1.458.415Z" clip-rule="evenodd"/>
+                </svg>
+                Run Instant Watchdog Check
+              </button>
+            </div>
           </div>
         </div>
       </div>
