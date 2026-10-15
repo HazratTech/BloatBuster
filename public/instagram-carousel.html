@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BloatBuster • Instagram Carousel Case Study Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0B0F19;
+      --bg-card: rgba(17, 24, 39, 0.85);
+      --border-card: rgba(255, 255, 255, 0.12);
+      --accent-green: #10B981;
+      --accent-emerald-glow: rgba(16, 185, 129, 0.25);
+      --accent-red: #EF4444;
+      --accent-cyan: #38BDF8;
+      --text-main: #FFFFFF;
+      --text-muted: #9CA3AF;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #060911;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      max-width: 1080px;
+      width: 100%;
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--accent-green);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .slides-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 28px;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .slide-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent-green);
+    }
+
+    .slide-header {
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border-card);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .slide-img-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #0B0F19;
+      position: relative;
+    }
+
+    .slide-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .slide-footer {
+      padding: 16px 20px;
+      background: rgba(11, 15, 25, 0.9);
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-card);
+    }
+
+    .slide-footer strong {
+      color: #fff;
+    }
+
+    .btn-download {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: var(--accent-green);
+      color: #000;
+      font-weight: 700;
+      font-size: 12px;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: opacity 0.2s;
+    }
+    .btn-download:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <span class="badge">INSTAGRAM CASE STUDY CAROUSEL</span>
+      <h1 style="font-size: 28px; font-weight: 800; margin-top: 8px;">BloatBuster • 5-Slide Case Study Showcase</h1>
+      <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Engineered with Junaid Jamel high-contrast obsidian dark aesthetics & verifiable metrics.</p>
+    </div>
+    <div style="font-size: 13px; color: var(--text-muted);">
+      Aspect Ratio: <strong>1:1 Square (1080x1080)</strong>
+    </div>
+  </header>
+
+  <div class="slides-grid">
+    <!-- Slide 1 -->
+    <div class="slide-card">
+      <div class="slide-header">
+        <span>SLIDE 01 • THE HOOK</span>
+        <span style="color: var(--accent-green);">Cover</span>
+      </div>
+      <div class="slide-img-wrap">
+        <img src="slide1-cover.jpg" alt="Slide 1 Hook">
+      </div>
+      <div class="slide-footer">
+        <strong>Hook Headline:</strong> How an 8-Figure Shopify Store Cut 1.6MB of Ghost Code in 60s.<br>
+        <strong>Visual:</strong> 38 ➔ 94 PageSpeed Jump (+147% Speed Boost).
+      </div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="slide-card">
+      <div class="slide-header">
+        <span>SLIDE 02 • THE PROBLEM</span>
+        <span style="color: var(--accent-red);">Diagnostic</span>
+      </div>
+      <div class="slide-img-wrap">
+        <img src="slide2-problem.jpg" alt="Slide 2 Problem">
+      </div>
+      <div class="slide-footer">
+        <strong>The Flaw:</strong> Deleting apps from Shopify Admin leaves their scripts running in theme code.<br>
+        <strong>Impact:</strong> 585KB of dead JavaScript running on every single page load.
+      </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="slide-card">
+      <div class="slide-header">
+        <span>SLIDE 03 • THE SOLUTION</span>
+        <span style="color: var(--accent-cyan);">Architecture</span>
+      </div>
+      <div class="slide-img-wrap">
+        <img src="slide3-solution.jpg" alt="Slide 3 Solution">
+      </div>
+      <div class="slide-footer">
+        <strong>The Fix:</strong> 1-Click Safe Excision with automated GraphQL theme backups & comment wrappers.<br>
+        <strong>Safety:</strong> 52 verified app signatures cataloged with zero false positives.
+      </div>
+    </div>
+
+    <!-- Slide 4 -->
+    <div class="slide-card">
+      <div class="slide-header">
+        <span>SLIDE 04 • THE TELEMETRY</span>
+        <span style="color: var(--accent-green);">Proof</span>
+      </div>
+      <div class="slide-img-wrap">
+        <img src="slide4-results.jpg" alt="Slide 4 Telemetry">
+      </div>
+      <div class="slide-footer">
+        <strong>The Proof:</strong> Live Core Web Vitals telemetry.<br>
+        <strong>Metrics:</strong> Score: 38 ➔ 94 | LCP: 4.8s ➔ 1.4s | TBT: 680ms ➔ 45ms | -1,640 KB Removed.
+      </div>
+    </div>
+
+    <!-- Slide 5 -->
+    <div class="slide-card">
+      <div class="slide-header">
+        <span>SLIDE 05 • CALL TO ACTION</span>
+        <span style="color: var(--accent-green);">Conversion</span>
+      </div>
+      <div class="slide-img-wrap">
+        <img src="slide5-cta.jpg" alt="Slide 5 CTA">
+      </div>
+      <div class="slide-footer">
+        <strong>The Offer:</strong> Keep Your Theme Fast 24/7 with Watchdog for $2.99/mo.<br>
+        <strong>CTA:</strong> Comment "BLOAT" below for instant free scan link + 7-Day Pro pass.
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
